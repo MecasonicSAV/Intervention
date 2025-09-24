@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>MECASONIC — Bon d’intervention</title>
+  <title>OGT MOBILE — Bon d’intervention</title>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -76,12 +76,7 @@
     .star:hover{background:rgba(255,255,255,.04)}
     .note-caption{color:var(--muted); font-size:13px}
     /* ---- PDF Template (hidden) ---- */
- #pdf-template{
-  /* SUPPRIMER position/left/top ici */
-  width:794px; /* A4 ~ 96dpi */
-  background:#fff; color:#111; padding:32px;
-}
-
+    #pdf-template{position:fixed; left:-99999px; top:0; width:794px; /* A4 ~ 96dpi */ background:#fff; color:#111; padding:32px}
     .pdf-header{
       height:54px; color:#fff; display:flex; align-items:center; justify-content:space-between;
       padding:0 24px; border-radius:8px;
@@ -104,7 +99,7 @@
 </head>
 <body>
   <div class="container">
-    <h1 class="title">MECASONIC — Bon d’intervention</h1>
+    <h1 class="title">OGT MOBILE — Bon d’intervention</h1>
 
     <div class="card" id="card">
       <div class="ribbon"></div>
@@ -226,7 +221,8 @@
       <!-- Actions -->
       <div class="divider" style="margin-top:18px"></div>
       <div class="toolbar" style="justify-content:flex-end; margin-top:8px">
-        <button class="btn btn-primary" type="button" id="previewBtn">Aperçu PDF</button>
+        <button class="btn btn-ghost" type="button" id="previewBtn">Aperçu PDF</button>
+        <button class="btn btn-primary" type="button" id="downloadBtn">Télécharger le PDF</button>
       </div>
     </div>
   </div>
@@ -290,7 +286,7 @@
     </div>
 
     <div class="pdf-footer">
-      <div>MECASONIC • Rapport d’intervention</div>
+      <div>OGT MOBILE • Rapport d’intervention</div>
       <div id="pdf-page"></div>
     </div>
   </div>
@@ -302,6 +298,7 @@
     const safe = v => (v==null || String(v).trim()==='' ? '—' : String(v).trim());
     const todayISO = () => new Date().toISOString().slice(0,10);
     const noteCaption = n => n===0?'Aucune évaluation': n<=2?'Très insuffisant': n<=4?'Peut mieux faire': n<=6?'Correct': n<=8?'Bien': n<=9?'Très bien':'Excellent';
+    const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
     // ---------- Stars ----------
     let noteValue = 0;
@@ -378,24 +375,21 @@ function attachSignature(canvas){
 
   function toDataURL(){ return canvas.toDataURL('image/png'); }
 
-  // <<< NOUVEAU : version "noir" pour le PDF >>>
+  // version "noir" pour le PDF
   function toDataURLBlack(){
     const w = canvas.width, h = canvas.height;
     const off = document.createElement('canvas');
     off.width = w; off.height = h;
     const octx = off.getContext('2d', {willReadFrequently:true});
-    // copie l'image dessinée
     octx.drawImage(canvas, 0, 0);
     const img = octx.getImageData(0,0,w,h);
     const d = img.data;
     for(let i=0;i<d.length;i+=4){
-      const a = d[i+3];       // alpha
+      const a = d[i+3]; // alpha
       if(a > 16){
-        // pixel dessiné -> noir, garde l'alpha pour l'anti-aliasing
-        d[i]=0; d[i+1]=0; d[i+2]=0; /* d[i+3] = a */
+        d[i]=0; d[i+1]=0; d[i+2]=0; // noir
       }else{
-        // fond -> transparent
-        d[i+3]=0;
+        d[i+3]=0; // transparent
       }
     }
     octx.putImageData(img,0,0);
@@ -409,7 +403,6 @@ function attachSignature(canvas){
   };
 }
 
-    // ---------- Form init ----------
     $('#date').value = todayISO();
     renderStars(0);
 
@@ -442,10 +435,30 @@ function attachSignature(canvas){
       $('#p_noteTxt').textContent = `Note : ${noteValue}/10 — ${noteCaption(noteValue)}`;
       $('#p_stars').textContent = '★'.repeat(noteValue) + '☆'.repeat(10-noteValue);
 
-    const c = sigClient.toDataURLBlack();
-const t = sigTech.toDataURLBlack();
-$('#p_sigClient').src = c;
-$('#p_sigTech').src = t;
+      const c = sigClient.toDataURLBlack();
+      const t = sigTech.toDataURLBlack();
+      $('#p_sigClient').src = c;
+      $('#p_sigTech').src = t;
+    }
+
+    async function buildAndSavePdf(filename){
+      const el = $('#pdf-template');
+      const { jsPDF } = window.jspdf;
+
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+      await doc.html(el, {
+        x: 24, y: 24, width: (doc.internal.pageSize.getWidth() - 48),
+        html2canvas: { scale: 0.9, useCORS: true, backgroundColor: '#ffffff' },
+        callback: function(doc){
+          const pageCount = doc.getNumberOfPages();
+          for(let i=1;i<=pageCount;i++){
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.text(`Page ${i}/${pageCount}`, doc.internal.pageSize.getWidth()-48, doc.internal.pageSize.getHeight()-18, {align:'right'});
+          }
+          doc.save(filename);
+        }
+      });
     }
 
     function fileName(){
@@ -454,29 +467,57 @@ $('#p_sigTech').src = t;
       return `RapportIntervention_${call || d}.pdf`;
     }
 
+    // Helper: canvas de l’aperçu (pour PNG)
+    async function buildPreviewCanvas(){
+      const node = $('#pdf-template');
+      return await html2canvas(node, {scale:1, backgroundColor:'#fff'});
+    }
+
+    // Aperçu (NE PAS TOUCHER) — ouvre un onglet avec l’image PNG du gabarit
     $('#previewBtn').addEventListener('click', async ()=>{
       fillPdfTemplate();
-      const node = $('#pdf-template');
-      const canvas = await html2canvas(node, {scale:1, backgroundColor:'#fff'});
+      const canvas = await buildPreviewCanvas();
       const data = canvas.toDataURL('image/png');
       const w = window.open('');
       w.document.write(`<title>Aperçu PDF</title><img src="${data}" style="max-width:100%;height:auto;display:block;margin:0 auto;"/>`);
     });
 
+    // Télécharger PDF (desktop/Android) OU Partager PNG (iOS)
     $('#downloadBtn').addEventListener('click', async ()=>{
       fillPdfTemplate();
-    });
-    async function ensureFontsAndImages(root){
-  if (document.fonts && document.fonts.ready) {
-    try { await document.fonts.ready; } catch {}
-  }
-  const imgs = Array.from(root.querySelectorAll('img'));
-  await Promise.all(imgs.map(img => {
-    if (img.complete) return Promise.resolve();
-    return new Promise(res => { img.onload = img.onerror = () => res(); });
-  }));
-}
 
+      if (isIOS()) {
+        // --- iOS: PARTAGER PNG ---
+        const canvas = await buildPreviewCanvas();
+        const dataUrl = canvas.toDataURL('image/png');
+        const pngBlob = await (await fetch(dataUrl)).blob();
+        const pngName = fileName().replace(/\.pdf$/,'') + '.png';
+        const file = new File([pngBlob], pngName, { type:'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files:[file] })) {
+          try {
+            await navigator.share({
+              title: 'Aperçu Rapport (PNG)',
+              text: 'Aperçu du rapport d’intervention',
+              files: [file]
+            });
+            return;
+          } catch (e) {
+            // utilisateur a annulé → on tente un fallback
+          }
+        }
+        // Fallback iOS : ouvrir l’image (l’utilisateur peut “Enregistrer l’image”)
+        const url = URL.createObjectURL(pngBlob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.target = '_blank';
+        a.click();
+        setTimeout(()=>URL.revokeObjectURL(url), 60_000);
+      } else {
+        // --- Autres plateformes: TÉLÉCHARGER PDF comme avant ---
+        await buildAndSavePdf(fileName());
+      }
+    });
   </script>
 </body>
 </html>

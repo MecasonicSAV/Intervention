@@ -338,44 +338,72 @@
     starsRoot.addEventListener('pointercancel', ()=> dragging=false);
 
     // ---------- Signatures (canvas) ----------
-    function attachSignature(canvas){
-      const ctx = canvas.getContext('2d',{willReadFrequently:true});
-      let drawing = false, last=null;
-      const DPR = Math.max(1, window.devicePixelRatio || 1);
-      function resize(){
-        const {width, height} = canvas.getBoundingClientRect();
-        canvas.width = Math.floor(width*DPR);
-        canvas.height = Math.floor(height*DPR);
-        ctx.scale(DPR, DPR);
-        ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-        ctx.strokeStyle = '#E8ECF1';
+function attachSignature(canvas){
+  const ctx = canvas.getContext('2d',{willReadFrequently:true});
+  let drawing = false, last=null;
+  const DPR = Math.max(1, window.devicePixelRatio || 1);
+  function resize(){
+    const {width, height} = canvas.getBoundingClientRect();
+    canvas.width = Math.floor(width*DPR);
+    canvas.height = Math.floor(height*DPR);
+    ctx.setTransform(1,0,0,1,0,0);
+    ctx.scale(DPR, DPR);
+    ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = '#E8ECF1'; // couleur claire pour l'UI sombre
+  }
+  resize(); new ResizeObserver(resize).observe(canvas);
+
+  const pos = e => {
+    if(e.touches && e.touches[0]) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+    return {x:e.clientX, y:e.clientY};
+  };
+  const toLocal = (p)=>{
+    const r = canvas.getBoundingClientRect();
+    return {x:p.x - r.left, y:p.y - r.top};
+  };
+
+  canvas.addEventListener('pointerdown', e=>{ drawing=true; last=toLocal(pos(e)); e.preventDefault(); canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', e=>{
+    if(!drawing) return;
+    const p = toLocal(pos(e));
+    ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    last=p; e.preventDefault();
+  });
+  canvas.addEventListener('pointerup', e=>{ drawing=false; canvas.releasePointerCapture(e.pointerId); });
+  canvas.addEventListener('pointerleave', ()=> drawing=false);
+
+  function toDataURL(){ return canvas.toDataURL('image/png'); }
+
+  // <<< NOUVEAU : version "noir" pour le PDF >>>
+  function toDataURLBlack(){
+    const w = canvas.width, h = canvas.height;
+    const off = document.createElement('canvas');
+    off.width = w; off.height = h;
+    const octx = off.getContext('2d', {willReadFrequently:true});
+    // copie l'image dessinée
+    octx.drawImage(canvas, 0, 0);
+    const img = octx.getImageData(0,0,w,h);
+    const d = img.data;
+    for(let i=0;i<d.length;i+=4){
+      const a = d[i+3];       // alpha
+      if(a > 16){
+        // pixel dessiné -> noir, garde l'alpha pour l'anti-aliasing
+        d[i]=0; d[i+1]=0; d[i+2]=0; /* d[i+3] = a */
+      }else{
+        // fond -> transparent
+        d[i+3]=0;
       }
-      resize(); new ResizeObserver(resize).observe(canvas);
-
-      const pos = e => {
-        if(e.touches && e.touches[0]) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
-        return {x:e.clientX, y:e.clientY};
-      };
-      const toLocal = (p)=>{
-        const r = canvas.getBoundingClientRect();
-        return {x:p.x - r.left, y:p.y - r.top};
-      };
-
-      canvas.addEventListener('pointerdown', e=>{ drawing=true; last=toLocal(pos(e)); e.preventDefault(); canvas.setPointerCapture(e.pointerId); });
-      canvas.addEventListener('pointermove', e=>{
-        if(!drawing) return;
-        const p = toLocal(pos(e));
-        ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
-        last=p; e.preventDefault();
-      });
-      canvas.addEventListener('pointerup', e=>{ drawing=false; canvas.releasePointerCapture(e.pointerId); });
-      canvas.addEventListener('pointerleave', ()=> drawing=false);
-
-      return {
-        clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); },
-        toDataURL(){ return canvas.toDataURL('image/png'); }
-      };
     }
+    octx.putImageData(img,0,0);
+    return off.toDataURL('image/png');
+  }
+
+  return {
+    clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); },
+    toDataURL,
+    toDataURLBlack
+  };
+}
 
     // ---------- Form init ----------
     $('#date').value = todayISO();
@@ -410,10 +438,10 @@
       $('#p_noteTxt').textContent = `Note : ${noteValue}/10 — ${noteCaption(noteValue)}`;
       $('#p_stars').textContent = '★'.repeat(noteValue) + '☆'.repeat(10-noteValue);
 
-      const c = sigClient.toDataURL();
-      const t = sigTech.toDataURL();
-      $('#p_sigClient').src = c;
-      $('#p_sigTech').src = t;
+    const c = sigClient.toDataURLBlack();
+const t = sigTech.toDataURLBlack();
+$('#p_sigClient').src = c;
+$('#p_sigTech').src = t;
     }
 
     async function buildAndSavePdf(filename){

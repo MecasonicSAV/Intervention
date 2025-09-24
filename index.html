@@ -1,0 +1,464 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>OGT MOBILE — Bon d’intervention</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- jsPDF + html2canvas (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+
+  <style>
+    :root{
+      --bg-top:#0F1115; --bg-bottom:#151823; --card:#161A25;
+      --text:#E8ECF1; --muted:#9AA3B2;
+      --primary-start:#6AA6FF; --primary-end:#5EF0C1;
+      --field:#11151F; --line:#293044; --danger:#FF6B6B;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      color:var(--text); background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
+    }
+    .container{max-width:1100px; margin:0 auto; padding:24px 20px 48px}
+    .title{font-size:28px; font-weight:700; text-align:center; margin:18px 0 22px}
+    .card{
+      background:var(--card); border-radius:24px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.3);
+    }
+    .ribbon{
+      height:6px; margin:-6px -6px 16px;
+      background:linear-gradient(90deg,var(--primary-start),var(--primary-end));
+      border-radius:6px;
+    }
+    .grid{
+      display:grid; gap:14px;
+      grid-template-columns: 1fr 1fr;
+    }
+    @media (max-width: 860px){ .grid{grid-template-columns:1fr} }
+    label.small{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
+    input, select, textarea, .field{
+      width:100%; background:var(--field); border:1px solid var(--line);
+      color:var(--text); border-radius:14px; padding:12px 14px; font-size:14px;
+    }
+    textarea{min-height:120px; resize:vertical}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+    @media (max-width: 640px){ .row{grid-template-columns:1fr} }
+    .btn{
+      display:inline-flex; align-items:center; justify-content:center;
+      border:none; color:#fff; font-weight:700; font-size:16px; padding:14px 18px;
+      border-radius:16px; cursor:pointer; transition:transform .08s ease, opacity .2s;
+      user-select:none; gap:8px;
+    }
+    .btn:active{transform:scale(.98)}
+    .btn-primary{
+      background:linear-gradient(135deg,var(--primary-start),var(--primary-end));
+      box-shadow:0 6px 18px rgba(64,180,255,.25);
+    }
+    .btn-ghost{background:#1F2937}
+    .btn-danger{background:var(--danger)}
+    .toolbar{display:flex; gap:12px; flex-wrap:wrap}
+    .section-title{font-weight:700; margin:10px 0 6px}
+    .divider{height:1px; background:var(--line); margin:10px 0 2px; border-radius:1px}
+    /* ---- Signatures ---- */
+    .sig-wrap{background:var(--field); border:1px dashed var(--line); border-radius:14px; padding:8px}
+    .sig-canvas{width:100%; height:230px; background:#0d111a; border-radius:10px; touch-action:none}
+    .sig-actions{margin-top:8px; display:flex; gap:10px; justify-content:flex-end}
+    /* ---- Stars ---- */
+    .stars{display:grid; grid-template-columns:repeat(10,1fr); gap:4px; user-select:none}
+    .star{font-size:28px; text-align:center; line-height:1; padding:8px 0; cursor:pointer; border-radius:10px}
+    .star.filled{color:var(--primary-start)}
+    .star:hover{background:rgba(255,255,255,.04)}
+    .note-caption{color:var(--muted); font-size:13px}
+    /* ---- PDF Template (hidden) ---- */
+    #pdf-template{position:fixed; left:-99999px; top:0; width:794px; /* A4 ~ 96dpi */ background:#fff; color:#111; padding:32px}
+    .pdf-header{
+      height:54px; color:#fff; display:flex; align-items:center; justify-content:space-between;
+      padding:0 24px; border-radius:8px;
+      background:linear-gradient(90deg,var(--primary-start),var(--primary-end));
+      margin-bottom:14px;
+    }
+    .pdf-h1{font-size:20px; font-weight:700}
+    .pdf-meta{font-size:12px; opacity:.95}
+    .pdf-row{display:flex; gap:16px; margin:12px 0}
+    .pdf-col{flex:1}
+    .kv{display:flex; gap:10px; margin:6px 0}
+    .kv .k{min-width:140px; font-weight:700}
+    .box{border:1px solid #ddd; border-radius:8px; padding:12px; background:#fff}
+    .pdf-stars{font-size:16px; letter-spacing:2px; color:#0a66ff}
+    .sig-box{border:1px solid #ddd; border-radius:8px; height:90px; display:flex; align-items:center; justify-content:center; background:#fff}
+    .sig-box img{max-width:100%; max-height:82px}
+    .pdf-footer{margin-top:14px; font-size:11px; color:#555; display:flex; justify-content:space-between}
+    .muted{color:#666}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="title">OGT MOBILE — Bon d’intervention</h1>
+
+    <div class="card" id="card">
+      <div class="ribbon"></div>
+
+      <!-- Infos -->
+      <h3 class="section-title">Informations</h3>
+      <div class="divider"></div>
+
+      <div class="grid">
+        <div>
+          <label class="small" for="type">Type d'intervention</label>
+          <select id="type">
+            <option>Mise en service</option>
+            <option>Mise au point</option>
+            <option>Intervention</option>
+            <option>Contrôle machine</option>
+          </select>
+        </div>
+        <div>
+          <label class="small" for="date">Date</label>
+          <input id="date" type="date" />
+        </div>
+
+        <div>
+          <label class="small" for="client">Nom du client</label>
+          <input id="client" type="text" placeholder="Ex: Mecasonic SA" />
+        </div>
+        <div>
+          <label class="small" for="adresse">Adresse</label>
+          <input id="adresse" type="text" placeholder="Rue, CP, Ville" />
+        </div>
+
+        <div>
+          <label class="small" for="appel">N° Appel</label>
+          <input id="appel" type="text" />
+        </div>
+        <div>
+          <label class="small" for="affaire">N° Affaire</label>
+          <input id="affaire" type="text" />
+        </div>
+
+        <div>
+          <label class="small" for="commande">N° Commande</label>
+          <input id="commande" type="text" />
+        </div>
+        <div>
+          <label class="small" for="km">Kilomètres</label>
+          <input id="km" type="number" inputmode="decimal" placeholder="Ex: 120" />
+        </div>
+      </div>
+
+      <!-- Temps -->
+      <h3 class="section-title" style="margin-top:16px">Temps & déplacements</h3>
+      <div class="divider"></div>
+
+      <div class="row">
+        <div>
+          <label class="small" for="arrivee">Heure d'arrivée</label>
+          <input id="arrivee" type="time" />
+        </div>
+        <div>
+          <label class="small" for="depart">Heure de départ</label>
+          <input id="depart" type="time" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="small" for="interventionH">Temps d'intervention (h)</label>
+          <input id="interventionH" type="text" inputmode="decimal" placeholder="Ex: 3.5" />
+        </div>
+        <div>
+          <label class="small" for="trajetH">Temps de trajet A/R (h)</label>
+          <input id="trajetH" type="text" inputmode="decimal" placeholder="Ex: 1.0" />
+        </div>
+      </div>
+
+      <!-- Observations -->
+      <h3 class="section-title" style="margin-top:16px">Observations</h3>
+      <div class="divider"></div>
+      <textarea id="observations" placeholder="Notes, actions réalisées, anomalies…"></textarea>
+
+      <!-- Note -->
+      <h3 class="section-title" style="margin-top:16px">Note du client</h3>
+      <div class="divider"></div>
+      <div class="row" style="align-items:center">
+        <div>
+          <div id="stars" class="stars" aria-label="Note sur 10"></div>
+          <div class="note-caption"><span id="noteLabel">Note : 0/10</span> — <span id="noteCaption">Aucune évaluation</span></div>
+        </div>
+        <div></div>
+      </div>
+
+      <!-- Signatures -->
+      <h3 class="section-title" style="margin-top:16px">Signatures</h3>
+      <div class="divider"></div>
+
+      <div class="row">
+        <div>
+          <label class="small">Signature Client</label>
+          <div class="sig-wrap">
+            <canvas id="sigClient" class="sig-canvas"></canvas>
+            <div class="sig-actions">
+              <button class="btn btn-danger" type="button" id="clearClient">Effacer</button>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label class="small">Signature Technicien</label>
+          <div class="sig-wrap">
+            <canvas id="sigTech" class="sig-canvas"></canvas>
+            <div class="sig-actions">
+              <button class="btn btn-danger" type="button" id="clearTech">Effacer</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="divider" style="margin-top:18px"></div>
+      <div class="toolbar" style="justify-content:flex-end; margin-top:8px">
+        <button class="btn btn-ghost" type="button" id="previewBtn">Aperçu PDF</button>
+        <button class="btn btn-primary" type="button" id="downloadBtn">Télécharger le PDF</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ----------- Gabarit PDF caché ----------- -->
+  <div id="pdf-template">
+    <div class="pdf-header">
+      <div class="pdf-h1">Rapport d’intervention</div>
+      <div class="pdf-meta" id="pdf-date"></div>
+    </div>
+
+    <div class="pdf-row">
+      <div class="pdf-col box">
+        <div class="kv"><div class="k">Client</div><div id="p_client">—</div></div>
+        <div class="kv"><div class="k">Adresse</div><div id="p_adresse">—</div></div>
+        <div class="kv"><div class="k">Kilomètres</div><div id="p_km">—</div></div>
+      </div>
+      <div class="pdf-col box">
+        <div class="kv"><div class="k">Type</div><div id="p_type">—</div></div>
+        <div class="kv"><div class="k">Date</div><div id="p_date">—</div></div>
+        <div class="kv"><div class="k">N° Appel</div><div id="p_appel">—</div></div>
+        <div class="kv"><div class="k">N° Affaire</div><div id="p_affaire">—</div></div>
+        <div class="kv"><div class="k">N° Commande</div><div id="p_commande">—</div></div>
+      </div>
+    </div>
+
+    <div class="pdf-row">
+      <div class="pdf-col box">
+        <div class="kv"><div class="k">Arrivée</div><div id="p_arrivee">—</div></div>
+        <div class="kv"><div class="k">Départ</div><div id="p_depart">—</div></div>
+      </div>
+      <div class="pdf-col box">
+        <div class="kv"><div class="k">Intervention (h)</div><div id="p_interventionH">—</div></div>
+        <div class="kv"><div class="k">Trajet A/R (h)</div><div id="p_trajetH">—</div></div>
+      </div>
+    </div>
+
+    <div class="box" style="margin:10px 0 0">
+      <div style="font-weight:700; margin-bottom:6px">Observations</div>
+      <div id="p_observations" style="white-space:pre-wrap"></div>
+    </div>
+
+    <div class="pdf-row" style="align-items:flex-start">
+      <div class="pdf-col box">
+        <div style="font-weight:700; margin-bottom:6px">Note du client</div>
+        <div id="p_noteTxt" class="muted" style="margin-bottom:4px">—</div>
+        <div id="p_stars" class="pdf-stars">☆☆☆☆☆☆☆☆☆☆</div>
+      </div>
+      <div class="pdf-col"></div>
+    </div>
+
+    <div class="pdf-row">
+      <div class="pdf-col">
+        <div style="font-weight:700; margin:8px 0 6px">Signature Client</div>
+        <div class="sig-box"><img id="p_sigClient" alt=""></div>
+      </div>
+      <div class="pdf-col">
+        <div style="font-weight:700; margin:8px 0 6px">Signature Technicien</div>
+        <div class="sig-box"><img id="p_sigTech" alt=""></div>
+      </div>
+    </div>
+
+    <div class="pdf-footer">
+      <div>OGT MOBILE • Rapport d’intervention</div>
+      <div id="pdf-page"></div>
+    </div>
+  </div>
+
+  <script>
+    // ---------- Helpers ----------
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const safe = v => (v==null || String(v).trim()==='' ? '—' : String(v).trim());
+    const todayISO = () => new Date().toISOString().slice(0,10);
+    const noteCaption = n => n===0?'Aucune évaluation': n<=2?'Très insuffisant': n<=4?'Peut mieux faire': n<=6?'Correct': n<=8?'Bien': n<=9?'Très bien':'Excellent';
+
+    // ---------- Stars ----------
+    let noteValue = 0;
+    const starsRoot = $('#stars');
+    function renderStars(n){
+      starsRoot.innerHTML = '';
+      for(let i=1;i<=10;i++){
+        const s = document.createElement('div');
+        s.className = 'star' + (i<=n?' filled':'');
+        s.textContent = i<=n?'★':'☆';
+        s.dataset.val = i;
+        starsRoot.appendChild(s);
+      }
+      $('#noteLabel').textContent = `Note : ${n}/10`;
+      $('#noteCaption').textContent = noteCaption(n);
+    }
+    // tap
+    starsRoot.addEventListener('click', e=>{
+      const v = Number(e.target?.dataset?.val || 0);
+      if(!v) return;
+      noteValue = v;
+      renderStars(noteValue);
+    });
+    // drag / swipe
+    let dragging = false;
+    const starDrag = (clientX)=>{
+      const rect = starsRoot.getBoundingClientRect();
+      const rel = Math.max(0, Math.min(rect.width, clientX - rect.left));
+      const idx = Math.min(10, Math.max(0, Math.ceil((rel/rect.width)*10)));
+      if(idx !== noteValue){
+        noteValue = idx;
+        renderStars(noteValue);
+      }
+    };
+    starsRoot.addEventListener('pointerdown', e=>{ dragging = true; starsRoot.setPointerCapture(e.pointerId); starDrag(e.clientX); });
+    starsRoot.addEventListener('pointermove', e=>{ if(dragging) starDrag(e.clientX); });
+    starsRoot.addEventListener('pointerup', e=>{ dragging=false; starsRoot.releasePointerCapture(e.pointerId); });
+    starsRoot.addEventListener('pointercancel', ()=> dragging=false);
+
+    // ---------- Signatures (canvas) ----------
+    function attachSignature(canvas){
+      const ctx = canvas.getContext('2d',{willReadFrequently:true});
+      let drawing = false, last=null;
+      const DPR = Math.max(1, window.devicePixelRatio || 1);
+      function resize(){
+        const {width, height} = canvas.getBoundingClientRect();
+        canvas.width = Math.floor(width*DPR);
+        canvas.height = Math.floor(height*DPR);
+        ctx.scale(DPR, DPR);
+        ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        ctx.strokeStyle = '#E8ECF1';
+      }
+      resize(); new ResizeObserver(resize).observe(canvas);
+
+      const pos = e => {
+        if(e.touches && e.touches[0]) return {x:e.touches[0].clientX, y:e.touches[0].clientY};
+        return {x:e.clientX, y:e.clientY};
+      };
+      const toLocal = (p)=>{
+        const r = canvas.getBoundingClientRect();
+        return {x:p.x - r.left, y:p.y - r.top};
+      };
+
+      canvas.addEventListener('pointerdown', e=>{ drawing=true; last=toLocal(pos(e)); e.preventDefault(); canvas.setPointerCapture(e.pointerId); });
+      canvas.addEventListener('pointermove', e=>{
+        if(!drawing) return;
+        const p = toLocal(pos(e));
+        ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+        last=p; e.preventDefault();
+      });
+      canvas.addEventListener('pointerup', e=>{ drawing=false; canvas.releasePointerCapture(e.pointerId); });
+      canvas.addEventListener('pointerleave', ()=> drawing=false);
+
+      return {
+        clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); },
+        toDataURL(){ return canvas.toDataURL('image/png'); }
+      };
+    }
+
+    // ---------- Form init ----------
+    $('#date').value = todayISO();
+    renderStars(0);
+
+    const sigClient = attachSignature($('#sigClient'));
+    const sigTech   = attachSignature($('#sigTech'));
+    $('#clearClient').onclick = ()=> sigClient.clear();
+    $('#clearTech').onclick   = ()=> sigTech.clear();
+
+    // ---------- PDF ----------
+    function fillPdfTemplate(){
+      $('#pdf-date').textContent = new Date().toLocaleString('fr-FR');
+
+      $('#p_client').textContent = safe($('#client').value);
+      $('#p_adresse').textContent = safe($('#adresse').value);
+      $('#p_km').textContent = safe($('#km').value);
+
+      $('#p_type').textContent = safe($('#type').value);
+      $('#p_date').textContent = safe($('#date').value);
+      $('#p_appel').textContent = safe($('#appel').value);
+      $('#p_affaire').textContent = safe($('#affaire').value);
+      $('#p_commande').textContent = safe($('#commande').value);
+
+      $('#p_arrivee').textContent = safe($('#arrivee').value);
+      $('#p_depart').textContent = safe($('#depart').value);
+      $('#p_interventionH').textContent = safe($('#interventionH').value);
+      $('#p_trajetH').textContent = safe($('#trajetH').value);
+
+      $('#p_observations').textContent = safe($('#observations').value);
+
+      $('#p_noteTxt').textContent = `Note : ${noteValue}/10 — ${noteCaption(noteValue)}`;
+      $('#p_stars').textContent = '★'.repeat(noteValue) + '☆'.repeat(10-noteValue);
+
+      const c = sigClient.toDataURL();
+      const t = sigTech.toDataURL();
+      $('#p_sigClient').src = c;
+      $('#p_sigTech').src = t;
+    }
+
+    async function buildAndSavePdf(filename){
+      const el = $('#pdf-template');
+      const { jsPDF } = window.jspdf;
+
+      // Multipage auto via doc.html + html2canvas
+      const doc = new jsPDF({ unit:'pt', format:'a4' });
+      await doc.html(el, {
+        x: 24, y: 24, width: (doc.internal.pageSize.getWidth() - 48),
+        html2canvas: { scale: 0.9, useCORS: true, backgroundColor: '#ffffff' },
+        callback: function(doc){
+          // simple footer page X/Y (optionnel)
+          const pageCount = doc.getNumberOfPages();
+          for(let i=1;i<=pageCount;i++){
+            doc.setPage(i);
+            doc.setFontSize(10);
+            doc.text(`Page ${i}/${pageCount}`, doc.internal.pageSize.getWidth()-48, doc.internal.pageSize.getHeight()-18, {align:'right'});
+          }
+          doc.save(filename);
+        }
+      });
+    }
+
+    function fileName(){
+      const call = $('#appel').value?.trim();
+      const d = $('#date').value?.replaceAll('-','') || new Date().toISOString().slice(0,10).replaceAll('-','');
+      return `RapportIntervention_${call || d}.pdf`;
+    }
+
+    // Aperçu (ouvre un nouvel onglet avec l’image du PDF rendu)
+    $('#previewBtn').addEventListener('click', async ()=>{
+      fillPdfTemplate();
+      const node = $('#pdf-template');
+      const canvas = await html2canvas(node, {scale:1, backgroundColor:'#fff'});
+      const data = canvas.toDataURL('image/png');
+      const w = window.open('');
+      w.document.write(`<title>Aperçu PDF</title><img src="${data}" style="max-width:100%;height:auto;display:block;margin:0 auto;"/>`);
+    });
+
+    // Télécharger PDF
+    $('#downloadBtn').addEventListener('click', async ()=>{
+      fillPdfTemplate();
+      await buildAndSavePdf(fileName());
+    });
+  </script>
+</body>
+</html>

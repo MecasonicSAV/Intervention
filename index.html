@@ -444,27 +444,66 @@ $('#p_sigClient').src = c;
 $('#p_sigTech').src = t;
     }
 
-    async function buildAndSavePdf(filename){
-      const el = $('#pdf-template');
-      const { jsPDF } = window.jspdf;
+async function buildAndSavePdf(filename){
+  const { jsPDF } = window.jspdf;
+  const node = $('#pdf-template');
 
-      // Multipage auto via doc.html + html2canvas
-      const doc = new jsPDF({ unit:'pt', format:'a4' });
-      await doc.html(el, {
-        x: 24, y: 24, width: (doc.internal.pageSize.getWidth() - 48),
-        html2canvas: { scale: 0.9, useCORS: true, backgroundColor: '#ffffff' },
-        callback: function(doc){
-          // simple footer page X/Y (optionnel)
-          const pageCount = doc.getNumberOfPages();
-          for(let i=1;i<=pageCount;i++){
-            doc.setPage(i);
-            doc.setFontSize(10);
-            doc.text(`Page ${i}/${pageCount}`, doc.internal.pageSize.getWidth()-48, doc.internal.pageSize.getHeight()-18, {align:'right'});
-          }
-          doc.save(filename);
-        }
-      });
-    }
+  // S’assure que polices + images (signatures) sont prêtes
+  await ensureFontsAndImages(node);
+
+  // On met le gabarit “dans la page” (invisible) pour de bons calculs de layout
+  const prev = node.getAttribute('style') || '';
+  node.style.position = 'fixed';
+  node.style.left = '0';
+  node.style.top = '0';
+  node.style.visibility = 'hidden';
+  node.style.zIndex = '-1';
+
+  // Capture haute résolution
+  const canvas = await html2canvas(node, {
+    scale: 2,           // qualité
+    useCORS: true,
+    backgroundColor: '#ffffff'
+  });
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+  // Restaure le style initial
+  node.setAttribute('style', prev);
+
+  // Création PDF A4 en points (pt)
+  const pdf = new jsPDF('p', 'pt', 'a4');
+  const pageW = pdf.internal.pageSize.getWidth();
+  const pageH = pdf.internal.pageSize.getHeight();
+  const margin = 24;
+
+  const imgW = pageW - margin * 2;
+  const imgH = canvas.height * imgW / canvas.width;
+
+  let position = margin;
+  let heightLeft = imgH;
+
+  // Première page
+  pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+  heightLeft -= (pageH - margin * 2);
+
+  // Pages suivantes (on décale l’image vers le haut -> “slice”)
+  while (heightLeft > 0) {
+    pdf.addPage();
+    position = margin - (imgH - heightLeft);
+    pdf.addImage(imgData, 'JPEG', margin, position, imgW, imgH);
+    heightLeft -= (pageH - margin * 2);
+  }
+
+  // Footer simple page X/Y
+  const pageCount = pdf.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    pdf.setPage(i);
+    pdf.setFontSize(10);
+    pdf.text(`Page ${i}/${pageCount}`, pageW - margin, pageH - 10, { align: 'right' });
+  }
+
+  pdf.save(filename);
+}
 
     function fileName(){
       const call = $('#appel').value?.trim();
@@ -472,7 +511,6 @@ $('#p_sigTech').src = t;
       return `RapportIntervention_${call || d}.pdf`;
     }
 
-    // Aperçu (ouvre un nouvel onglet avec l’image du PDF rendu)
     $('#previewBtn').addEventListener('click', async ()=>{
       fillPdfTemplate();
       const node = $('#pdf-template');
@@ -482,11 +520,21 @@ $('#p_sigTech').src = t;
       w.document.write(`<title>Aperçu PDF</title><img src="${data}" style="max-width:100%;height:auto;display:block;margin:0 auto;"/>`);
     });
 
-    // Télécharger PDF
     $('#downloadBtn').addEventListener('click', async ()=>{
       fillPdfTemplate();
       await buildAndSavePdf(fileName());
     });
+    async function ensureFontsAndImages(root){
+  if (document.fonts && document.fonts.ready) {
+    try { await document.fonts.ready; } catch {}
+  }
+  const imgs = Array.from(root.querySelectorAll('img'));
+  await Promise.all(imgs.map(img => {
+    if (img.complete) return Promise.resolve();
+    return new Promise(res => { img.onload = img.onerror = () => res(); });
+  }));
+}
+
   </script>
 </body>
 </html>

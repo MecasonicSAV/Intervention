@@ -8,13 +8,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" defer></script>
 
   <style>
     :root{
-      --bg-top:#0F1115; --bg-bottom:#151823; --card:#161A25;
+      --brand-red:#B31217;
+      --brand-red-dark:#7E0D11;
+      --brand-green:#00A651;       
+      --brand-blue:#0071BC;       
+      --brand-gray:#4A5568;
+
+      --bg-top:#0B0D12; --bg-bottom:#141824; --card:#161A25;
       --text:#E8ECF1; --muted:#9AA3B2;
-      --primary-start:#6AA6FF; --primary-end:#5EF0C1;
-      --field:#11151F; --line:#293044; --danger:#FF6B6B;
+      --field:#11151F; --line:#283147; --danger:#FF6B6B;
+
+      --logo-url: url('https://www.mecasonic.com/wp-content/uploads/2021/09/logo-mecasonic-white.png');
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -23,10 +31,15 @@
       color:var(--text); background:linear-gradient(180deg,var(--bg-top),var(--bg-bottom));
     }
     .container{max-width:1100px; margin:0 auto; padding:24px 20px 48px}
-    .title{font-size:28px; font-weight:700; text-align:center; margin:18px 0 22px}
+    .title-wrap{display:flex; align-items:center; justify-content:center; gap:14px; margin:12px 0 18px}
+    .brand-logo{
+      width:220px; height:52px; background:var(--logo-url) center/contain no-repeat; flex:0 0 auto; filter: drop-shadow(0 1px 0 rgba(0,0,0,.25));
+    }
+    .title{font-size:28px; font-weight:700; text-align:center; margin:0}
+    .subtitle{color:var(--muted); font-size:13px; text-align:center; margin-top:6px}
     .card{background:var(--card); border-radius:24px; padding:22px; box-shadow:0 10px 30px rgba(0,0,0,.3)}
     .ribbon{height:6px; margin:-6px -6px 16px;
-      background:linear-gradient(90deg,var(--primary-start),var(--primary-end)); border-radius:6px}
+      background:linear-gradient(90deg,var(--brand-red),var(--brand-red-dark)); border-radius:6px}
     .grid{display:grid; gap:14px; grid-template-columns: 1fr 1fr}
     @media (max-width: 860px){ .grid{grid-template-columns:1fr} }
     label.small{font-size:12px; color:var(--muted); display:block; margin-bottom:6px}
@@ -44,7 +57,7 @@
       user-select:none; gap:8px;
     }
     .btn:active{transform:scale(.98)}
-    .btn-primary{background:linear-gradient(135deg,var(--primary-start),var(--primary-end)); box-shadow:0 6px 18px rgba(64,180,255,.25)}
+    .btn-primary{background:linear-gradient(135deg,var(--brand-red),var(--brand-red-dark)); box-shadow:0 6px 18px rgba(179,18,23,.35)}
     .btn-ghost{background:#1F2937}
     .btn-danger{background:var(--danger)}
     .toolbar{display:flex; gap:12px; flex-wrap:wrap}
@@ -55,65 +68,66 @@
     .sig-actions{margin-top:8px; display:flex; gap:10px; justify-content:flex-end}
     .stars{display:grid; grid-template-columns:repeat(10,1fr); gap:4px; user-select:none}
     .star{font-size:28px; text-align:center; line-height:1; padding:8px 0; cursor:pointer; border-radius:10px}
-    .star.filled{color:var(--primary-start)}
+    .star.filled{color:var(--brand-red)}
     .star:hover{background:rgba(255,255,255,.04)}
     .note-caption{color:var(--muted); font-size:13px}
-    #pdf-template{position:fixed; left:-99999px; top:0; width:794px;background:#fff; color:#111; padding:32px}
-    .pdf-header{height:54px; color:#fff; display:flex; align-items:center; justify-content:space-between;
-      padding:0 24px; border-radius:8px; background:linear-gradient(90deg,var(--primary-start),var(--primary-end)); margin-bottom:14px}
+    .hidden{display:none!important}
+
+    #pdf-template{position:fixed; left:-99999px; top:0; width:794px;background:#fff; color:#111; padding:28px}
+    .pdf-header{
+      color:#fff; display:flex; align-items:center; justify-content:space-between;
+      padding:10px 16px; border-radius:10px; background:linear-gradient(90deg,var(--brand-red-dark)); margin-bottom:14px
+    }
+    .pdf-head-left{display:flex; align-items:center; gap:12px}
+    .pdf-logo{width:210px; height:8px; background:var(--logo-url) center/contain no-repeat; filter: drop-shadow(0 1px 0 rgba(0,0,0,.25))}
     .pdf-h1{font-size:20px; font-weight:700}
     .pdf-meta{font-size:12px; opacity:.95}
     .pdf-row{display:flex; gap:16px; margin:12px 0}
     .pdf-col{flex:1}
     .kv{display:flex; gap:10px; margin:6px 0}
-    .kv .k{min-width:140px; font-weight:700}
-    .box{border:1px solid #ddd; border-radius:8px; padding:12px; background:#fff}
-    .pdf-stars{font-size:16px; letter-spacing:2px; color:#0a66ff}
+    .kv .k{min-width:140px; font-weight:700; color:#222}
+    .box{border:1px solid #e4e4e4; border-radius:8px; padding:12px; background:#fff}
+    .pdf-stars{font-size:16px; letter-spacing:2px; color:var(--brand-red)}
     .sig-box{border:1px solid #ddd; border-radius:8px; height:90px; display:flex; align-items:center; justify-content:center; background:#fff}
     .sig-box img{max-width:100%; max-height:82px}
-    .pdf-footer{margin-top:14px; font-size:11px; color:#555; display:flex; justify-content:space-between}
-    .muted{color:#666}
-    .hidden{display:none!important}
-
+    .pdf-footer{
+      margin-top:14px; font-size:11px; color:#444; display:flex; justify-content:space-between; align-items:center
+    }
+    .pdf-footer .tagline{color:var(--brand-gray)}
+    .bar{height:4px; background:linear-gradient(90deg,var(--brand-red),var(--brand-blue),var(--brand-green)); border-radius:3px; margin-top:6px}
     .photos-toolbar{display:flex; gap:10px; align-items:center; margin-top:8px}
-    .photos-grid{
-      display:grid; gap:14px; margin-top:12px;
-      grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
-    }
-    .photo-card{
-      border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#0d111a;
-    }
-    .photo-top{
-      position:relative; background:#0b0f18; display:flex; align-items:center; justify-content:center;
-      padding:8px;
-    }
-    .photo-top img{
-      max-width:100%; max-height:280px; width:auto; height:auto; display:block; object-fit:contain; background:#0b0f18;
-    }
-    .photo-del{
-      position:absolute; top:8px; right:8px; background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.25); color:#fff;
-      font-size:12px; padding:4px 6px; border-radius:8px; cursor:pointer
-    }
+    .photos-grid{display:grid; gap:14px; margin-top:12px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr))}
+    .photo-card{border:1px solid var(--line); border-radius:14px; overflow:hidden; background:#0d111a;}
+    .photo-top{position:relative; background:#0b0f18; display:flex; align-items:center; justify-content:center; padding:8px;}
+    .photo-top img{max-width:100%; max-height:280px; width:auto; height:auto; object-fit:contain; background:#0b0f18; display:block}
+    .photo-del{position:absolute; top:8px; right:8px; background:rgba(0,0,0,.6); border:1px solid rgba(255,255,255,.25); color:#fff; font-size:12px; padding:4px 6px; border-radius:8px; cursor:pointer}
     .photo-meta{padding:8px 10px; display:grid; gap:6px}
     .photo-name{font-size:12px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-
+    .photo-comment{background:#0f1420; border:1px solid var(--line); color:var(--text); border-radius:10px; padding:10px 12px}
     .pdf-photos-grid{display:grid; grid-template-columns:1fr 1fr; gap:10px}
-    .pdf-photo{
-      border:1px solid #ddd; border-radius:8px; overflow:hidden; background:#fff;
-      display:flex; flex-direction:column; gap:6px; padding:8px;
-    }
-    .pdf-photo img{
-      width:100%; height:auto; max-height:360px; object-fit:contain; display:block; background:#fff;
-    }
-    .pdf-caption{font-size:11px; color:#333; border-top:1px dashed #e4e4e4; padding-top:6px; white-space:pre-wrap}
-    @media print{
-      #pdf-template{position:static; width:auto; padding:0}
-    }
+    .pdf-photo{border:1px solid #e4e4e4; border-radius:8px; background:#fff; display:flex; flex-direction:column; gap:6px; padding:8px}
+    .pdf-photo img{width:100%; height:auto; max-height:360px; object-fit:contain; background:#fff; display:block}
+    .pdf-caption{font-size:11px; color:#222; border-top:1px dashed #e4e4e4; padding-top:6px; white-space:pre-wrap}
+    .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.5); z-index:9999}
+    .modal.open{display:grid}
+    .modal-card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:18px; width:min(96vw,560px); box-shadow:0 10px 30px rgba(0,0,0,.5)}
+    .modal-title{font-weight:700; font-size:18px; margin:0 0 6px}
+    .modal-sub{color:var(--muted); font-size:13px; margin-bottom:12px}
+    .modal-row{display:grid; grid-template-columns:1fr; gap:10px}
+    .linkbox{background:#0f1420; border:1px solid var(--line); border-radius:12px; padding:10px; word-break:break-all; font-size:13px}
+    .qr-wrap{display:flex; justify-content:center; padding:10px 0}
+    .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
+    .warn{font-size:12px; color:#ffb020}
+    @media print{ #pdf-template{position:static; width:auto; padding:0} }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 class="title">MECASONIC — Bon d’intervention</h1>
+    <div class="title-wrap">
+      <div class="brand-logo" aria-label="MECASONIC logo"></div>
+      <h1 class="title">Bon d’intervention</h1>
+    </div>
+    <div class="subtitle">Plastic Welding Solutions</div>
 
     <div class="card" id="card">
       <div class="ribbon"></div>
@@ -192,7 +206,6 @@
       <h3 class="section-title" style="margin-top:16px">Observations</h3>
       <div class="divider"></div>
       <textarea id="observations" placeholder="Notes, actions réalisées, anomalies…"></textarea>
-
       <div class="photos-toolbar">
         <input id="photosInput" type="file" accept="image/*" multiple class="hidden" />
         <button id="addPhotoBtn" class="btn btn-ghost" type="button">Ajouter des photos</button>
@@ -235,17 +248,26 @@
       </div>
 
       <div class="divider" style="margin-top:18px"></div>
-      <div class="toolbar" style="justify-content:flex-end; margin-top:8px">
-        <button class="btn btn-ghost" type="button" id="previewBtn">Aperçu PDF</button>
-        <button class="btn btn-primary hidden" type="button" id="shareBtn">Partager (PNG)</button>
+      <div class="toolbar" style="justify-content:space-between; margin-top:8px">
+        <div class="toolbar" style="gap:8px">
+          <button class="btn btn-ghost" type="button" id="exportBtn">Exporter JSON</button>
+          <input id="importInput" type="file" accept="application/json" class="hidden" />
+          <button class="btn btn-ghost" type="button" id="importBtn">Importer JSON</button>
+        </div>
+        <div class="toolbar" style="gap:8px">
+          <button class="btn btn-ghost" type="button" id="handoffBtn">Déplacer sur téléphone</button>
+          <button class="btn btn-ghost" type="button" id="previewBtn">Aperçu PDF</button>
+          <button class="btn btn-primary hidden" type="button" id="shareBtn">Partager (PNG)</button>
+        </div>
       </div>
     </div>
   </div>
-
   <div id="pdf-template">
     <div class="pdf-header">
-      <div class="pdf-h1">Rapport d’intervention</div>
-      <div class="pdf-meta" id="pdf-date"></div>
+      <div class="pdf-head-left">
+        <div class="pdf-logo" aria-label="MECASONIC"></div>
+        <div class="pdf-h1">Rapport d’intervention</div>
+      </div>
     </div>
 
     <div class="pdf-row">
@@ -278,7 +300,6 @@
       <div style="font-weight:700; margin-bottom:6px">Observations</div>
       <div id="p_observations" style="white-space:pre-wrap"></div>
     </div>
-
     <div id="pdf-photos-section" class="box" style="margin:10px 0 0; display:none;">
       <div style="font-weight:700; margin-bottom:6px">Photos</div>
       <div id="p_photosGrid" class="pdf-photos-grid"></div>
@@ -305,8 +326,21 @@
     </div>
 
     <div class="pdf-footer">
-      <div>MECASONIC • Rapport d’intervention</div>
-      <div id="pdf-page"></div>
+      <div>MECASONIC • Rapport d’intervention<div class="bar"></div></div>
+      <div class="tagline">Plastic Welding Solutions</div>
+    </div>
+  </div>
+  <div id="handoffModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <div class="modal-title">Déplacer sur téléphone</div>
+      <div class="modal-sub">Scanne le QR avec ton téléphone ou copie le lien pour reprendre là où tu en étais.</div>
+      <div class="warn">Le lien n’inclut pas les <b>photos</b> ni les <b>signatures</b> (pour rester court). Utilise “Exporter JSON” si tu dois tout transférer.</div>
+      <div class="qr-wrap"><div id="handoffQR"></div></div>
+      <div id="handoffLink" class="linkbox"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" type="button" id="copyLinkBtn">Copier le lien</button>
+        <button class="btn btn-primary" type="button" id="closeHandoffBtn">Fermer</button>
+      </div>
     </div>
   </div>
 
@@ -316,26 +350,20 @@
     const todayISO = () => new Date().toISOString().slice(0,10);
     const noteCaption = n => n===0?'Aucune évaluation': n<=2?'Très insuffisant': n<=4?'Peut mieux faire': n<=6?'Correct': n<=8?'Bien': n<=9?'Très bien':'Excellent';
     const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
     let noteValue = 0;
     const starsRoot = $('#stars');
     function renderStars(n){
       starsRoot.innerHTML = '';
       for(let i=1;i<=10;i++){
         const s = document.createElement('div');
-        s.className = 'star' + (i<=n?' filled':'');
-        s.textContent = i<=n?'★':'☆';
-        s.dataset.val = i;
+        s.className = 'star' + (i<=n?' filled':''); s.textContent = i<=n?'★':'☆'; s.dataset.val = i;
         starsRoot.appendChild(s);
       }
       $('#noteLabel').textContent = `Note : ${n}/10`;
       $('#noteCaption').textContent = noteCaption(n);
     }
     starsRoot.addEventListener('click', e=>{
-      const v = Number(e.target?.dataset?.val || 0);
-      if(!v) return;
-      noteValue = v;
-      renderStars(noteValue);
+      const v = Number(e.target?.dataset?.val || 0); if(!v) return; noteValue = v; renderStars(noteValue);
     });
     let dragging = false;
     const starDrag = (clientX)=>{
@@ -381,13 +409,10 @@
       function toDataURLBlack(){
         const w = canvas.width, h = canvas.height;
         const off = document.createElement('canvas'); off.width = w; off.height = h;
-        const octx = off.getContext('2d', {willReadFrequently:true});
-        octx.drawImage(canvas, 0, 0);
+        const octx = off.getContext('2d',{willReadFrequently:true});
+        octx.drawImage(canvas,0,0);
         const img = octx.getImageData(0,0,w,h), d = img.data;
-        for(let i=0;i<d.length;i+=4){
-          const a = d[i+3];
-          if(a > 16){ d[i]=0; d[i+1]=0; d[i+2]=0; } else { d[i+3]=0; }
-        }
+        for(let i=0;i<d.length;i+=4){ const a = d[i+3]; if(a>16){ d[i]=0; d[i+1]=0; d[i+2]=0; } else { d[i+3]=0; } }
         octx.putImageData(img,0,0);
         return off.toDataURL('image/png');
       }
@@ -401,16 +426,12 @@
     const sigTech   = attachSignature($('#sigTech'));
     $('#clearClient').onclick = ()=> sigClient.clear();
     $('#clearTech').onclick   = ()=> sigTech.clear();
-
     const addPhotoBtn = $('#addPhotoBtn');
     const photosInput = $('#photosInput');
     const photosList  = $('#photosList');
-
-    /** Tableau { name, url, comment } */
     let photosData = [];
 
     addPhotoBtn.addEventListener('click', () => photosInput.click());
-
     photosInput.addEventListener('change', async (e) => {
       const files = Array.from(e.target.files || []);
       for (const f of files) {
@@ -443,7 +464,7 @@
           </div>
           <div class="photo-meta">
             <div class="photo-name" title="${p.name}">${p.name}</div>
-            <input class="photo-comment" type="text" placeholder="Commentaire (optionnel)" data-idx="${idx}" value="${p.comment?.replace(/"/g,'&quot;')||''}">
+            <input class="photo-comment" type="text" placeholder="Commentaire (optionnel)" data-idx="${idx}" value="${(p.comment||'').replace(/"/g,'&quot;')}">
           </div>
         `;
         photosList.appendChild(card);
@@ -454,23 +475,16 @@
       const btn = e.target.closest('.photo-del');
       if (btn){
         const idx = Number(btn.dataset.idx);
-        if (Number.isInteger(idx)) {
-          photosData.splice(idx, 1);
-          renderPhotosList();
-        }
+        if (Number.isInteger(idx)) { photosData.splice(idx, 1); renderPhotosList(); }
       }
     });
     photosList.addEventListener('input', (e)=>{
-      const input = e.target.closest('.photo-comment');
-      if (!input) return;
+      const input = e.target.closest('.photo-comment'); if (!input) return;
       const idx = Number(input.dataset.idx);
-      if (Number.isInteger(idx) && photosData[idx]){
-        photosData[idx].comment = input.value;
-      }
+      if (Number.isInteger(idx) && photosData[idx]){ photosData[idx].comment = input.value; }
     });
 
     function fillPdfTemplate(){
-      $('#pdf-date').textContent = new Date().toLocaleString('fr-FR');
       const safeVal = id => $('#'+id).value?.trim();
       const setText = (id, v) => $('#'+id).textContent = safe(v);
       setText('p_client', safeVal('client'));
@@ -488,6 +502,7 @@
       $('#p_observations').textContent = safe($('#observations').value);
       $('#p_noteTxt').textContent = `Note : ${noteValue}/10 — ${noteCaption(noteValue)}`;
       $('#p_stars').textContent = '★'.repeat(noteValue) + '☆'.repeat(10-noteValue);
+
       const c = sigClient.toDataURLBlack(), t = sigTech.toDataURLBlack();
       $('#p_sigClient').src = c; $('#p_sigTech').src = t;
 
@@ -497,17 +512,11 @@
       if (photosData.length > 0) {
         section.style.display = '';
         photosData.forEach(p => {
-          const cell = document.createElement('div');
-          cell.className = 'pdf-photo';
-          const img = document.createElement('img');
-          img.src = p.url;
-          img.alt = '';
-          const cap = document.createElement('div');
-          cap.className = 'pdf-caption';
-          cap.textContent = p.comment && p.comment.trim() ? p.comment.trim() : p.name;
-          cell.appendChild(img);
-          cell.appendChild(cap);
-          grid.appendChild(cell);
+          const cell = document.createElement('div'); cell.className = 'pdf-photo';
+          const img = document.createElement('img'); img.src = p.url; img.alt = '';
+          const cap = document.createElement('div'); cap.className = 'pdf-caption';
+          cap.textContent = (p.comment && p.comment.trim()) ? p.comment.trim() : p.name;
+          cell.appendChild(img); cell.appendChild(cap); grid.appendChild(cell);
         });
       } else {
         section.style.display = 'none';
@@ -545,28 +554,194 @@
       const file = new File([pngBlob], 'Apercu_Rapport.png', { type:'image/png' });
 
       if (navigator.canShare && navigator.canShare({ files:[file] })) {
-        try {
-          await navigator.share({ title: 'Aperçu Rapport (PNG)', text: 'Aperçu du rapport d’intervention', files:[file] });
-          return;
-        } catch(e){ }
+        try { await navigator.share({ title: 'Aperçu Rapport (PNG)', text: 'Aperçu du rapport d’intervention', files:[file] }); return; }
+        catch(e){ }
       }
       const url = URL.createObjectURL(pngBlob);
-      const a = document.createElement('a');
-      a.href = url; a.target = '_blank'; a.click();
-      setTimeout(()=>URL.revokeObjectURL(url), 60_000);
+      const a = document.createElement('a'); a.href = url; a.target = '_blank'; a.click();
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
     });
 
     (function setupButtons(){
-      const preview = $('#previewBtn');
-      const share = $('#shareBtn');
-      if (isIOS()) {
-        preview.classList.add('hidden');
-        share.classList.remove('hidden');
-      } else {
-        share.classList.add('hidden');
-        preview.classList.remove('hidden');
-      }
+      const preview = $('#previewBtn'); const share = $('#shareBtn');
+      if (isIOS()) { preview.classList.add('hidden'); share.classList.remove('hidden'); }
+      else { share.classList.add('hidden'); preview.classList.remove('hidden'); }
     })();
+    function base64urlEncode(bytes){
+      let bin = '';
+      for (const b of bytes) bin += String.fromCharCode(b);
+      return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+    }
+    function base64urlDecode(str){
+      str = str.replace(/-/g,'+').replace(/_/g,'/');
+      while (str.length % 4) str += '=';
+      const bin = atob(str);
+      const out = new Uint8Array(bin.length);
+      for (let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
+      return out;
+    }
+
+    function getLightState(){
+      return {
+        v:1,
+        ts: Date.now(),
+        fields:{
+          type: $('#type').value,
+          date: $('#date').value,
+          client: $('#client').value,
+          adresse: $('#adresse').value,
+          appel: $('#appel').value,
+          affaire: $('#affaire').value,
+          commande: $('#commande').value,
+          km: $('#km').value,
+          arrivee: $('#arrivee').value,
+          depart: $('#depart').value,
+          interventionH: $('#interventionH').value,
+          trajetH: $('#trajetH').value,
+          observations: $('#observations').value,
+          noteValue
+        }
+      };
+    }
+
+    function applyLightState(state){
+      if(!state || !state.fields) return;
+      const f = state.fields;
+      $('#type').value = f.type || $('#type').value;
+      $('#date').value = f.date || $('#date').value;
+      $('#client').value = f.client || '';
+      $('#adresse').value = f.adresse || '';
+      $('#appel').value = f.appel || '';
+      $('#affaire').value = f.affaire || '';
+      $('#commande').value = f.commande || '';
+      $('#km').value = f.km || '';
+      $('#arrivee').value = f.arrivee || '';
+      $('#depart').value = f.depart || '';
+      $('#interventionH').value = f.interventionH || '';
+      $('#trajetH').value = f.trajetH || '';
+      $('#observations').value = f.observations || '';
+      noteValue = Number(f.noteValue||0); renderStars(noteValue);
+    }
+
+    function makeHandoffURL(){
+      const state = getLightState();
+      const json = JSON.stringify(state);
+      const enc = new TextEncoder().encode(json);
+      const b64 = base64urlEncode(enc);
+      const url = new URL(window.location.href);
+      url.hash = 'handoff=' + b64;
+      return url.toString();
+    }
+
+    function openHandoffModal(link){
+      const modal = $('#handoffModal');
+      const linkBox = $('#handoffLink');
+      const qrBox = $('#handoffQR');
+      linkBox.textContent = link;
+      qrBox.innerHTML = '';
+      new QRCode(qrBox, { text: link, width: 220, height: 220, correctLevel: QRCode.CorrectLevel.M });
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+      $('#closeHandoffBtn').onclick = ()=>{ modal.classList.remove('open'); modal.setAttribute('aria-hidden','true'); };
+      $('#copyLinkBtn').onclick = async ()=>{
+        try{ await navigator.clipboard.writeText(link); $('#copyLinkBtn').textContent='Copié !'; setTimeout(()=>$('#copyLinkBtn').textContent='Copier le lien',1200); }catch{}
+      };
+    }
+
+    $('#handoffBtn').addEventListener('click', ()=>{
+      const link = makeHandoffURL();
+      openHandoffModal(link);
+    });
+
+    (function resumeFromHash(){
+      const h = location.hash || '';
+      const m = h.match(/handoff=([A-Za-z0-9\-\_]+)/);
+      if(!m) return;
+      try{
+        const bytes = base64urlDecode(m[1]);
+        const text = new TextDecoder().decode(bytes);
+        const state = JSON.parse(text);
+        applyLightState(state);
+        history.replaceState(null,'', location.pathname + location.search);
+        const toast = document.createElement('div');
+        toast.textContent = 'Formulaire repris depuis le lien 📱';
+        toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F2937;border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:9999';
+        document.body.appendChild(toast);
+        setTimeout(()=>toast.remove(), 2000);
+      }catch(e){}
+    })();
+
+    function getFullState(){
+      return {
+        v:1, ts: Date.now(),
+        fields:{
+          type: $('#type').value,
+          date: $('#date').value,
+          client: $('#client').value,
+          adresse: $('#adresse').value,
+          appel: $('#appel').value,
+          affaire: $('#affaire').value,
+          commande: $('#commande').value,
+          km: $('#km').value,
+          arrivee: $('#arrivee').value,
+          depart: $('#depart').value,
+          interventionH: $('#interventionH').value,
+          trajetH: $('#trajetH').value,
+          observations: $('#observations').value,
+          noteValue
+        },
+        photos: photosData, 
+        signatures:{
+          client: sigClient.toDataURL(),
+          tech: sigTech.toDataURL()
+        }
+      };
+    }
+
+    function applyFullState(data){
+      applyLightState(data);
+      if(data.photos && Array.isArray(data.photos)){ photosData = data.photos; renderPhotosList(); }
+      if(data.signatures){
+        const imgToCanvas = (dataUrl, canvas) => new Promise(res=>{
+          const img = new Image(); img.onload = ()=>{ 
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            const r = canvas.getBoundingClientRect();
+            const tmp = document.createElement('canvas');
+            tmp.width = r.width; tmp.height = r.height;
+            const tctx = tmp.getContext('2d');
+            tctx.drawImage(img,0,0,tmp.width,tmp.height);
+            ctx.drawImage(tmp,0,0,canvas.width,canvas.height);
+            res();
+          };
+          img.onerror = ()=>res();
+          img.src = dataUrl;
+        });
+        imgToCanvas(data.signatures.client, $('#sigClient'));
+        imgToCanvas(data.signatures.tech, $('#sigTech'));
+      }
+    }
+
+    $('#exportBtn').addEventListener('click', ()=>{
+      const state = getFullState();
+      const blob = new Blob([JSON.stringify(state,null,2)], {type:'application/json'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = `intervention_${new Date().toISOString().slice(0,19).replace(/[:T]/g,'-')}.json`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(()=>URL.revokeObjectURL(url), 60000);
+    });
+
+    $('#importBtn').addEventListener('click', ()=> $('#importInput').click());
+    $('#importInput').addEventListener('change', async (e)=>{
+      const f = e.target.files?.[0]; if(!f) return;
+      try{
+        const text = await f.text();
+        const data = JSON.parse(text);
+        applyFullState(data);
+      }catch(err){ alert('Fichier invalide.'); }
+      e.target.value = '';
+    });
   </script>
 </body>
 </html>

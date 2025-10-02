@@ -155,10 +155,14 @@
             <option>Contrôle machine</option>
           </select>
         </div>
-        <div>
-          <label class="small" for="date">Date</label>
-          <input id="date" type="date" />
-        </div>
+<div>
+  <label class="small" for="dateArrivee">Date d’arrivée</label>
+  <input id="dateArrivee" type="date" />
+</div>
+<div>
+  <label class="small" for="dateDepart">Date de départ</label>
+  <input id="dateDepart" type="date" />
+</div>
 
         <div>
           <label class="small" for="client">Nom du client</label>
@@ -170,8 +174,8 @@
         </div>
 
         <div>
-          <label class="small" for="appel">N° Appel</label>
-          <input id="appel" type="text" />
+          <label class="small" for="Meca">N° Meca/RMA</label>
+          <input id="Meca" type="text" />
         </div>
         <div>
           <label class="small" for="affaire">N° Affaire</label>
@@ -179,8 +183,8 @@
         </div>
 
         <div>
-          <label class="small" for="commande">N° Commande</label>
-          <input id="commande" type="text" />
+          <label class="small" for="Document">N° Document</label>
+          <input id="Document" type="text" />
         </div>
         <div>
           <label class="small" for="km">Kilomètres</label>
@@ -288,10 +292,11 @@
       </div>
       <div class="pdf-col box">
         <div class="kv"><div class="k">Type</div><div id="p_type">—</div></div>
-        <div class="kv"><div class="k">Date</div><div id="p_date">—</div></div>
-        <div class="kv"><div class="k">N° Appel</div><div id="p_appel">—</div></div>
+<div class="kv"><div class="k">Date d’arrivée</div><div id="p_dateArrivee">—</div></div>
+<div class="kv"><div class="k">Date de départ</div><div id="p_dateDepart">—</div></div>
+        <div class="kv"><div class="k">N° Meca/RMA</div><div id="p_Meca">—</div></div>
         <div class="kv"><div class="k">N° Affaire</div><div id="p_affaire">—</div></div>
-        <div class="kv"><div class="k">N° Commande</div><div id="p_commande">—</div></div>
+        <div class="kv"><div class="k">N° Document</div><div id="p_Document">—</div></div>
       </div>
     </div>
 
@@ -430,8 +435,8 @@
       }
       return { clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); }, toDataURL, toDataURLBlack };
     }
-
-    $('#date').value = todayISO();
+$('#dateArrivee').value = todayISO(); 
+$('#dateDepart').value  = ''; 
     renderStars(0);
 
     const sigClient = attachSignature($('#sigClient'));
@@ -503,10 +508,11 @@
       setText('p_adresse', safeVal('adresse'));
       setText('p_km', safeVal('km'));
       setText('p_type', safeVal('type'));
-      setText('p_date', safeVal('date'));
-      setText('p_appel', safeVal('appel'));
+  setText('p_dateArrivee', safeVal('dateArrivee'));
+  setText('p_dateDepart',  safeVal('dateDepart'));
+      setText('p_Meca', safeVal('Meca'));
       setText('p_affaire', safeVal('affaire'));
-      setText('p_commande', safeVal('commande'));
+      setText('p_Document', safeVal('Document'));
       setText('p_arrivee', safeVal('arrivee'));
       setText('p_depart', safeVal('depart'));
       setText('p_interventionH', safeVal('interventionH'));
@@ -599,12 +605,13 @@
         ts: Date.now(),
         fields:{
           type: $('#type').value,
-          date: $('#date').value,
+      dateArrivee: $('#dateArrivee').value,
+      dateDepart:  $('#dateDepart').value,
           client: $('#client').value,
           adresse: $('#adresse').value,
-          appel: $('#appel').value,
+          Meca: $('#Meca').value,
           affaire: $('#affaire').value,
-          commande: $('#commande').value,
+          Document: $('#Document').value,
           km: $('#km').value,
           arrivee: $('#arrivee').value,
           depart: $('#depart').value,
@@ -620,12 +627,13 @@
       if(!state || !state.fields) return;
       const f = state.fields;
       $('#type').value = f.type || $('#type').value;
-      $('#date').value = f.date || $('#date').value;
+  $('#dateArrivee').value = f.dateArrivee || '';
+  $('#dateDepart').value  = f.dateDepart  || '';
       $('#client').value = f.client || '';
       $('#adresse').value = f.adresse || '';
-      $('#appel').value = f.appel || '';
+      $('#Meca').value = f.Meca || '';
       $('#affaire').value = f.affaire || '';
-      $('#commande').value = f.commande || '';
+      $('#Document').value = f.Document || '';
       $('#km').value = f.km || '';
       $('#arrivee').value = f.arrivee || '';
       $('#depart').value = f.depart || '';
@@ -784,12 +792,13 @@ function openHandoffModal(link){
         v:1, ts: Date.now(),
         fields:{
           type: $('#type').value,
-          date: $('#date').value,
+      dateArrivee: $('#dateArrivee').value,
+      dateDepart:  $('#dateDepart').value,
           client: $('#client').value,
           adresse: $('#adresse').value,
-          appel: $('#appel').value,
+          Meca: $('#Meca').value,
           affaire: $('#affaire').value,
-          commande: $('#commande').value,
+          Document: $('#Document').value,
           km: $('#km').value,
           arrivee: $('#arrivee').value,
           depart: $('#depart').value,

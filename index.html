@@ -819,21 +819,29 @@ function openHandoffModal(link){
       applyLightState(data);
       if(data.photos && Array.isArray(data.photos)){ photosData = data.photos; renderPhotosList(); }
       if(data.signatures){
-        const imgToCanvas = (dataUrl, canvas) => new Promise(res=>{
-          const img = new Image(); img.onload = ()=>{ 
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            const r = canvas.getBoundingClientRect();
-            const tmp = document.createElement('canvas');
-            tmp.width = r.width; tmp.height = r.height;
-            const tctx = tmp.getContext('2d');
-            tctx.drawImage(img,0,0,tmp.width,tmp.height);
-            ctx.drawImage(tmp,0,0,canvas.width,canvas.height);
-            res();
-          };
-          img.onerror = ()=>res();
-          img.src = dataUrl;
-        });
+const imgToCanvas = (dataUrl, canvas) => new Promise(res => {
+  const img = new Image();
+  img.onload = () => {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    canvas.width  = Math.floor(rect.width  * dpr);
+    canvas.height = Math.floor(rect.height * dpr);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+    ctx.imageSmoothingEnabled = false;
+    ctx.clearRect(0, 0, rect.width, rect.height);
+    ctx.drawImage(img, 0, 0, rect.width, rect.height);
+    ctx.lineWidth = 3;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = '#E8ECF1';
+    res();
+  };
+  img.onerror = () => res();
+  img.src = dataUrl;
+});
+
         imgToCanvas(data.signatures.client, $('#sigClient'));
         imgToCanvas(data.signatures.tech, $('#sigTech'));
       }

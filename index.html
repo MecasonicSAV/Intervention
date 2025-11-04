@@ -119,16 +119,15 @@
     .warn{font-size:12px; color:#ffb020}
     @media print{ #pdf-template{position:static; width:auto; padding:0} }
     #handoffQR{
-  padding:12px;            
-  background:#fff;
-  border-radius:10px;
-}
-#handoffQR canvas{
-  display:block;
-  margin:0 auto;
-  image-rendering:pixelated;
-}
-
+      padding:12px;            
+      background:#fff;
+      border-radius:10px;
+    }
+    #handoffQR canvas{
+      display:block;
+      margin:0 auto;
+      image-rendering:pixelated;
+    }
   </style>
 </head>
 <body>
@@ -155,14 +154,14 @@
             <option>Contrôle machine</option>
           </select>
         </div>
-<div>
-  <label class="small" for="dateArrivee">Date d’arrivée</label>
-  <input id="dateArrivee" type="date" />
-</div>
-<div>
-  <label class="small" for="dateDepart">Date de départ</label>
-  <input id="dateDepart" type="date" />
-</div>
+        <div>
+          <label class="small" for="dateArrivee">Date d’arrivée</label>
+          <input id="dateArrivee" type="date" />
+        </div>
+        <div>
+          <label class="small" for="dateDepart">Date de départ</label>
+          <input id="dateDepart" type="date" />
+        </div>
 
         <div>
           <label class="small" for="client">Nom du client</label>
@@ -276,6 +275,7 @@
       </div>
     </div>
   </div>
+
   <div id="pdf-template">
     <div class="pdf-header">
       <div class="pdf-head-left">
@@ -292,8 +292,8 @@
       </div>
       <div class="pdf-col box">
         <div class="kv"><div class="k">Type</div><div id="p_type">—</div></div>
-<div class="kv"><div class="k">Date d’arrivée</div><div id="p_dateArrivee">—</div></div>
-<div class="kv"><div class="k">Date de départ</div><div id="p_dateDepart">—</div></div>
+        <div class="kv"><div class="k">Date d’arrivée</div><div id="p_dateArrivee">—</div></div>
+        <div class="kv"><div class="k">Date de départ</div><div id="p_dateDepart">—</div></div>
         <div class="kv"><div class="k">N° Meca/RMA</div><div id="p_Meca">—</div></div>
         <div class="kv"><div class="k">N° Affaire</div><div id="p_affaire">—</div></div>
         <div class="kv"><div class="k">N° Document</div><div id="p_Document">—</div></div>
@@ -345,6 +345,7 @@
       <div class="tagline">Plastic Welding Solutions</div>
     </div>
   </div>
+
   <div id="handoffModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <div class="modal-title">Déplacer sur téléphone</div>
@@ -358,8 +359,9 @@
       </div>
     </div>
   </div>
-<script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 
   <script>
     const $ = sel => document.querySelector(sel);
@@ -369,6 +371,7 @@
     const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     let noteValue = 0;
     const starsRoot = $('#stars');
+
     function renderStars(n){
       starsRoot.innerHTML = '';
       for(let i=1;i<=10;i++){
@@ -394,10 +397,54 @@
     starsRoot.addEventListener('pointerup', e=>{ dragging=false; starsRoot.releasePointerCapture(e.pointerId); });
     starsRoot.addEventListener('pointercancel', ()=> dragging=false);
 
+    // ★ Helper: dessin "contain + center" en pixels natifs (canvas.width/height)
+    function drawSignatureImage(canvas, dataUrl){
+      return new Promise(res=>{
+        const img = new Image();
+        img.onload = () => {
+          const dpr = Math.max(1, window.devicePixelRatio || 1);
+          const rect = canvas.getBoundingClientRect();
+          const ctx = canvas.getContext('2d', { willReadFrequently: true });
+
+          // Dimension interne (pixels)
+          canvas.width  = Math.floor(rect.width  * dpr);
+          canvas.height = Math.floor(rect.height * dpr);
+
+          // Dessin en pixels natifs sans transform
+          ctx.setTransform(1,0,0,1,0,0);
+          ctx.imageSmoothingEnabled = false;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Contain + center
+          const iw = img.width, ih = img.height;
+          const scale = Math.min(canvas.width / iw, canvas.height / ih);
+          const dw = Math.round(iw * scale);
+          const dh = Math.round(ih * scale);
+          const dx = Math.round((canvas.width  - dw) / 2);
+          const dy = Math.round((canvas.height - dh) / 2);
+          ctx.drawImage(img, dx, dy, dw, dh);
+
+          // Reconfigure pour reprise du dessin utilisateur en coords CSS
+          ctx.setTransform(1,0,0,1,0,0);
+          ctx.scale(dpr, dpr);
+          ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+          ctx.strokeStyle = '#E8ECF1';
+
+          // Mémorise la dernière image importée pour re-draw après resize
+          canvas.dataset.sigImport = dataUrl;
+
+          res();
+        };
+        img.onerror = () => res();
+        img.src = dataUrl;
+      });
+    }
+
     function attachSignature(canvas){
       const ctx = canvas.getContext('2d',{willReadFrequently:true});
       let drawing = false, last=null;
       const DPR = Math.max(1, window.devicePixelRatio || 1);
+
       function resize(){
         const {width, height} = canvas.getBoundingClientRect();
         canvas.width = Math.floor(width*DPR);
@@ -406,6 +453,12 @@
         ctx.scale(DPR, DPR);
         ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
         ctx.strokeStyle = '#E8ECF1';
+
+        // ★ Si une signature importée existe, on la réapplique après le resize
+        if (canvas.dataset.sigImport){
+          // On redessine en natif (async), puis re-scale pour le stylo
+          drawSignatureImage(canvas, canvas.dataset.sigImport);
+        }
       }
       resize(); new ResizeObserver(resize).observe(canvas);
 
@@ -427,22 +480,26 @@
         const w = canvas.width, h = canvas.height;
         const off = document.createElement('canvas'); off.width = w; off.height = h;
         const octx = off.getContext('2d',{willReadFrequently:true});
+        // ★ pas de lissage → bords nets
+        octx.imageSmoothingEnabled = false;
         octx.drawImage(canvas,0,0);
         const img = octx.getImageData(0,0,w,h), d = img.data;
         for(let i=0;i<d.length;i+=4){ const a = d[i+3]; if(a>16){ d[i]=0; d[i+1]=0; d[i+2]=0; } else { d[i+3]=0; } }
         octx.putImageData(img,0,0);
         return off.toDataURL('image/png');
       }
-      return { clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); }, toDataURL, toDataURLBlack };
+      return { clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); delete canvas.dataset.sigImport; }, toDataURL, toDataURLBlack };
     }
-$('#dateArrivee').value = todayISO(); 
-$('#dateDepart').value  = ''; 
+
+    $('#dateArrivee').value = todayISO(); 
+    $('#dateDepart').value  = ''; 
     renderStars(0);
 
     const sigClient = attachSignature($('#sigClient'));
     const sigTech   = attachSignature($('#sigTech'));
     $('#clearClient').onclick = ()=> sigClient.clear();
     $('#clearTech').onclick   = ()=> sigTech.clear();
+
     const addPhotoBtn = $('#addPhotoBtn');
     const photosInput = $('#photosInput');
     const photosList  = $('#photosList');
@@ -508,8 +565,8 @@ $('#dateDepart').value  = '';
       setText('p_adresse', safeVal('adresse'));
       setText('p_km', safeVal('km'));
       setText('p_type', safeVal('type'));
-  setText('p_dateArrivee', safeVal('dateArrivee'));
-  setText('p_dateDepart',  safeVal('dateDepart'));
+      setText('p_dateArrivee', safeVal('dateArrivee'));
+      setText('p_dateDepart',  safeVal('dateDepart'));
       setText('p_Meca', safeVal('Meca'));
       setText('p_affaire', safeVal('affaire'));
       setText('p_Document', safeVal('Document'));
@@ -585,6 +642,7 @@ $('#dateDepart').value  = '';
       if (isIOS()) { preview.classList.add('hidden'); share.classList.remove('hidden'); }
       else { share.classList.add('hidden'); preview.classList.remove('hidden'); }
     })();
+
     function base64urlEncode(bytes){
       let bin = '';
       for (const b of bytes) bin += String.fromCharCode(b);
@@ -605,8 +663,8 @@ $('#dateDepart').value  = '';
         ts: Date.now(),
         fields:{
           type: $('#type').value,
-      dateArrivee: $('#dateArrivee').value,
-      dateDepart:  $('#dateDepart').value,
+          dateArrivee: $('#dateArrivee').value,
+          dateDepart:  $('#dateDepart').value,
           client: $('#client').value,
           adresse: $('#adresse').value,
           Meca: $('#Meca').value,
@@ -627,8 +685,8 @@ $('#dateDepart').value  = '';
       if(!state || !state.fields) return;
       const f = state.fields;
       $('#type').value = f.type || $('#type').value;
-  $('#dateArrivee').value = f.dateArrivee || '';
-  $('#dateDepart').value  = f.dateDepart  || '';
+      $('#dateArrivee').value = f.dateArrivee || '';
+      $('#dateDepart').value  = f.dateDepart  || '';
       $('#client').value = f.client || '';
       $('#adresse').value = f.adresse || '';
       $('#Meca').value = f.Meca || '';
@@ -643,157 +701,160 @@ $('#dateDepart').value  = '';
       noteValue = Number(f.noteValue||0); renderStars(noteValue);
     }
 
-function makeHandoffURL(){
-  const json = JSON.stringify(getLightState());
-  const compressed = LZString.compressToEncodedURIComponent(json);
-  const url = new URL(window.location.href);
-  url.hash = 'handoffz=' + compressed;  
-  return url.toString();
-}
-(function resumeFromHash(){
-  const h = location.hash || '';
+    function makeHandoffURL(){
+      const json = JSON.stringify(getLightState());
+      const compressed = LZString.compressToEncodedURIComponent(json);
+      const url = new URL(window.location.href);
+      url.hash = 'handoffz=' + compressed;  
+      return url.toString();
+    }
 
-  const mz = h.match(/handoffz=([^&]+)/);
-  if (mz) {
-    try{
-      const text = LZString.decompressFromEncodedURIComponent(mz[1]);
-      const state = JSON.parse(text);
-      applyLightState(state);
-      history.replaceState(null,'', location.pathname + location.search);
-      const toast = document.createElement('div');
-      toast.textContent = 'Formulaire repris depuis le lien 📱';
-      toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F2937;border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:9999';
-      document.body.appendChild(toast);
-      setTimeout(()=>toast.remove(), 2000);
-      return;
-    }catch(e){}
-  }
-  const m = h.match(/handoff=([A-Za-z0-9\-\_]+)/);
-  if (m) {
-    try{
-      const bytes = base64urlDecode(m[1]);
-      const text = new TextDecoder().decode(bytes);
-      const state = JSON.parse(text);
-      applyLightState(state);
-      history.replaceState(null,'', location.pathname + location.search);
-      const toast = document.createElement('div');
-      toast.textContent = 'Formulaire repris depuis le lien 📱';
-      toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F2937;border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:9999';
-      document.body.appendChild(toast);
-      setTimeout(()=>toast.remove(), 2000);
-    }catch(e){}
-  }
-})();
-function drawQR(el, text, size = 320, margin = 8, dark = '#000', light = '#fff') {
-  function makeModel(tn) {
-    const ECC_L = 1;
-    const qr = new QRCode(tn, ECC_L);
-    qr.addData(text);
-    qr.make();
-    return qr;
-  }
+    (function resumeFromHash(){
+      const h = location.hash || '';
 
-  let qr;
-  for (let tn of [4, 6, 8, 10, 12, 14]) {
-    try { qr = makeModel(tn); break; } catch (e) {  }
-  }
-  if (!qr) qr = makeModel(16);
-
-  const count = qr.getModuleCount();
-  const cell = Math.floor((size - 2*margin) / count);
-  const dim = cell * count + 2*margin;
-
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = dim;
-  const ctx = canvas.getContext('2d');
-
-  ctx.fillStyle = light;
-  ctx.fillRect(0, 0, dim, dim);
-  ctx.fillStyle = dark;
-  for (let r = 0; r < count; r++) {
-    for (let c = 0; c < count; c++) {
-      if (qr.isDark(c, r)) {
-        ctx.fillRect(margin + c*cell, margin + r*cell, cell, cell);
+      const mz = h.match(/handoffz=([^&]+)/);
+      if (mz) {
+        try{
+          const text = LZString.decompressFromEncodedURIComponent(mz[1]);
+          const state = JSON.parse(text);
+          applyLightState(state);
+          history.replaceState(null,'', location.pathname + location.search);
+          const toast = document.createElement('div');
+          toast.textContent = 'Formulaire repris depuis le lien 📱';
+          toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F2937;border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:9999';
+          document.body.appendChild(toast);
+          setTimeout(()=>toast.remove(), 2000);
+          return;
+        }catch(e){}
       }
+      const m = h.match(/handoff=([A-Za-z0-9\-\_]+)/);
+      if (m) {
+        try{
+          const bytes = base64urlDecode(m[1]);
+          const text = new TextDecoder().decode(bytes);
+          const state = JSON.parse(text);
+          applyLightState(state);
+          history.replaceState(null,'', location.pathname + location.search);
+          const toast = document.createElement('div');
+          toast.textContent = 'Formulaire repris depuis le lien 📱';
+          toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F2937;border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:9999';
+          document.body.appendChild(toast);
+          setTimeout(()=>toast.remove(), 2000);
+        }catch(e){}
+      }
+    })();
+
+    function drawQR(el, text, size = 320, margin = 8, dark = '#000', light = '#fff') {
+      function makeModel(tn) {
+        const ECC_L = 1;
+        const qr = new QRCode(tn, ECC_L);
+        qr.addData(text);
+        qr.make();
+        return qr;
+      }
+      let qr;
+      for (let tn of [4, 6, 8, 10, 12, 14]) {
+        try { qr = makeModel(tn); break; } catch (e) {  }
+      }
+      if (!qr) qr = makeModel(16);
+
+      const count = qr.getModuleCount();
+      const cell = Math.floor((size - 2*margin) / count);
+      const dim = cell * count + 2*margin;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = dim;
+      const ctx = canvas.getContext('2d');
+
+      ctx.fillStyle = light;
+      ctx.fillRect(0, 0, dim, dim);
+      ctx.fillStyle = dark;
+      for (let r = 0; r < count; r++) {
+        for (let c = 0; c < count; c++) {
+          if (qr.isDark(c, r)) {
+            ctx.fillRect(margin + c*cell, margin + r*cell, cell, cell);
+          }
+        }
+      }
+      el.innerHTML = '';
+      el.appendChild(canvas);
     }
-  }
-  el.innerHTML = '';
-  el.appendChild(canvas);
-}
-function openHandoffModal(link){
-  const modal   = $('#handoffModal');
-  const linkBox = $('#handoffLink');
-  const qrBox   = $('#handoffQR');
 
-  linkBox.textContent = link;
-  qrBox.innerHTML = ''; 
-  modal.classList.add('open');
-  modal.setAttribute('aria-hidden','false');
-  const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
-  const QUIET = 16;       
-  const MIN_CELL = 4;      
-  const MIN_SIZE = 320;      
-  const MAX_SIZE = 960;     
-  let size = link.length < 220 ? 360
-          : link.length < 380 ? 420
-          : link.length < 560 ? 520
-          : 640;
+    function openHandoffModal(link){
+      const modal   = $('#handoffModal');
+      const linkBox = $('#handoffLink');
+      const qrBox   = $('#handoffQR');
 
-  size = Math.min(MAX_SIZE, Math.max(MIN_SIZE, size));
-  function renderAt(cssSize){
-    qrBox.innerHTML = '';
-    const qr = new QRCode(qrBox, {
-      text: link,
-      width: cssSize * DPR, 
-      height: cssSize * DPR,
-      correctLevel: QRCode.CorrectLevel.L
-    });
-    const canvas = qrBox.querySelector('canvas');
-    if (canvas) {
-      canvas.style.width  = cssSize + 'px';
-      canvas.style.height = cssSize + 'px';
+      linkBox.textContent = link;
+      qrBox.innerHTML = ''; 
+      modal.classList.add('open');
+      modal.setAttribute('aria-hidden','false');
+      const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
+      const QUIET = 16;       
+      const MIN_CELL = 4;      
+      const MIN_SIZE = 320;      
+      const MAX_SIZE = 960;     
+      let size = link.length < 220 ? 360
+              : link.length < 380 ? 420
+              : link.length < 560 ? 520
+              : 640;
+
+      size = Math.min(MAX_SIZE, Math.max(MIN_SIZE, size));
+      function renderAt(cssSize){
+        qrBox.innerHTML = '';
+        const qr = new QRCode(qrBox, {
+          text: link,
+          width: cssSize * DPR, 
+          height: cssSize * DPR,
+          correctLevel: QRCode.CorrectLevel.L
+        });
+        const canvas = qrBox.querySelector('canvas');
+        if (canvas) {
+          canvas.style.width  = cssSize + 'px';
+          canvas.style.height = cssSize + 'px';
+        }
+        return qr;
+      }
+      let qr = renderAt(size);
+
+      try {
+        const count = qr._oQRCode.getModuleCount();      
+        const canvas = qrBox.querySelector('canvas');
+        const cellCss = (size - 2*QUIET) / count;         
+        if (cellCss < MIN_CELL && size < MAX_SIZE) {
+          const needed = Math.ceil(count * MIN_CELL + 2*QUIET);
+          size = Math.min(MAX_SIZE, needed);
+          qr = renderAt(size);
+        }
+      } catch(e) {
+        console.warn('Densité non mesurable, rendu par défaut.', e);
+      }
+
+      $('#closeHandoffBtn').onclick = ()=>{
+        modal.classList.remove('open');
+        modal.setAttribute('aria-hidden','true');
+      };
+      $('#copyLinkBtn').onclick = async ()=>{
+        try {
+          await navigator.clipboard.writeText(link);
+          $('#copyLinkBtn').textContent = 'Copié !';
+          setTimeout(()=>$('#copyLinkBtn').textContent='Copier le lien',1200);
+        } catch {}
+      };
     }
-    return qr;
-  }
-  let qr = renderAt(size);
-
-  try {
-    const count = qr._oQRCode.getModuleCount();      
-    const canvas = qrBox.querySelector('canvas');
-    const cellCss = (size - 2*QUIET) / count;         
-    if (cellCss < MIN_CELL && size < MAX_SIZE) {
-      const needed = Math.ceil(count * MIN_CELL + 2*QUIET);
-      size = Math.min(MAX_SIZE, needed);
-      qr = renderAt(size);
-    }
-  } catch(e) {
-    console.warn('Densité non mesurable, rendu par défaut.', e);
-  }
-
-  $('#closeHandoffBtn').onclick = ()=>{
-    modal.classList.remove('open');
-    modal.setAttribute('aria-hidden','true');
-  };
-  $('#copyLinkBtn').onclick = async ()=>{
-    try {
-      await navigator.clipboard.writeText(link);
-      $('#copyLinkBtn').textContent = 'Copié !';
-      setTimeout(()=>$('#copyLinkBtn').textContent='Copier le lien',1200);
-    } catch {}
-  };
-}
 
     $('#handoffBtn').addEventListener('click', ()=>{
       const link = makeHandoffURL();
       openHandoffModal(link);
     });
+
     function getFullState(){
       return {
         v:1, ts: Date.now(),
         fields:{
           type: $('#type').value,
-      dateArrivee: $('#dateArrivee').value,
-      dateDepart:  $('#dateDepart').value,
+          dateArrivee: $('#dateArrivee').value,
+          dateDepart:  $('#dateDepart').value,
           client: $('#client').value,
           adresse: $('#adresse').value,
           Meca: $('#Meca').value,
@@ -819,31 +880,9 @@ function openHandoffModal(link){
       applyLightState(data);
       if(data.photos && Array.isArray(data.photos)){ photosData = data.photos; renderPhotosList(); }
       if(data.signatures){
-const imgToCanvas = (dataUrl, canvas) => new Promise(res => {
-  const img = new Image();
-  img.onload = () => {
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    const rect = canvas.getBoundingClientRect();
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
-    canvas.width  = Math.floor(rect.width  * dpr);
-    canvas.height = Math.floor(rect.height * dpr);
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-    ctx.imageSmoothingEnabled = false;
-    ctx.clearRect(0, 0, rect.width, rect.height);
-    ctx.drawImage(img, 0, 0, rect.width, rect.height);
-    ctx.lineWidth = 3;
-    ctx.lineJoin = 'round';
-    ctx.lineCap = 'round';
-    ctx.strokeStyle = '#E8ECF1';
-    res();
-  };
-  img.onerror = () => res();
-  img.src = dataUrl;
-});
-
-        imgToCanvas(data.signatures.client, $('#sigClient'));
-        imgToCanvas(data.signatures.tech, $('#sigTech'));
+        // ★ Import signatures en "contain + center" + mémorisation pour resize
+        drawSignatureImage($('#sigClient'), data.signatures.client);
+        drawSignatureImage($('#sigTech'),   data.signatures.tech);
       }
     }
 

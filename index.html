@@ -173,7 +173,7 @@
         </div>
 
         <div>
-          <label class="small" for="Meca">N° Meca/RMA</label>
+          <label class="small" for="Meca">N° Meca (RMA)</label>
           <input id="Meca" type="text" />
         </div>
         <div>
@@ -182,7 +182,7 @@
         </div>
 
         <div>
-          <label class="small" for="Document">N° Document</label>
+          <label class="small" for="Document">N° OC</label>
           <input id="Document" type="text" />
         </div>
         <div>
@@ -294,9 +294,9 @@
         <div class="kv"><div class="k">Type</div><div id="p_type">—</div></div>
         <div class="kv"><div class="k">Date d’arrivée</div><div id="p_dateArrivee">—</div></div>
         <div class="kv"><div class="k">Date de départ</div><div id="p_dateDepart">—</div></div>
-        <div class="kv"><div class="k">N° Meca/RMA</div><div id="p_Meca">—</div></div>
+        <div class="kv"><div class="k">N° Meca (RMA)</div><div id="p_Meca">—</div></div>
         <div class="kv"><div class="k">N° Affaire</div><div id="p_affaire">—</div></div>
-        <div class="kv"><div class="k">N° Document</div><div id="p_Document">—</div></div>
+        <div class="kv"><div class="k">N° OC</div><div id="p_Document">—</div></div>
       </div>
     </div>
 
@@ -880,7 +880,6 @@
       applyLightState(data);
       if(data.photos && Array.isArray(data.photos)){ photosData = data.photos; renderPhotosList(); }
       if(data.signatures){
-        // ★ Import signatures en "contain + center" + mémorisation pour resize
         drawSignatureImage($('#sigClient'), data.signatures.client);
         drawSignatureImage($('#sigTech'),   data.signatures.tech);
       }

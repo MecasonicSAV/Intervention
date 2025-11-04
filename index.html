@@ -72,6 +72,7 @@
     .note-caption{color:var(--muted); font-size:13px}
     .hidden{display:none!important}
 
+    /* ---- PDF Template ---- */
     #pdf-template{position:fixed; left:-99999px; top:0; width:794px;background:#fff; color:#111; padding:28px}
     .pdf-header{
       color:#fff; display:flex; align-items:center; justify-content:space-between;
@@ -84,7 +85,7 @@
     .pdf-row{display:flex; gap:16px; margin:12px 0}
     .pdf-col{flex:1}
     .kv{display:flex; gap:10px; margin:6px 0}
-    .kv .k{min-width:140px; font-weight:700; color:#222}
+    .kv .k{min-width:190px; font-weight:700; color:#222}
     .box{border:1px solid #e4e4e4; border-radius:8px; padding:12px; background:#fff}
     .pdf-stars{font-size:16px; letter-spacing:2px; color:var(--brand-red)}
     .sig-box{border:1px solid #ddd; border-radius:8px; height:90px; display:flex; align-items:center; justify-content:center; background:#fff}
@@ -118,16 +119,8 @@
     .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
     .warn{font-size:12px; color:#ffb020}
     @media print{ #pdf-template{position:static; width:auto; padding:0} }
-    #handoffQR{
-      padding:12px;            
-      background:#fff;
-      border-radius:10px;
-    }
-    #handoffQR canvas{
-      display:block;
-      margin:0 auto;
-      image-rendering:pixelated;
-    }
+    #handoffQR{ padding:12px; background:#fff; border-radius:10px; }
+    #handoffQR canvas{ display:block; margin:0 auto; image-rendering:pixelated; }
   </style>
 </head>
 <body>
@@ -144,7 +137,30 @@
       <h3 class="section-title">Informations</h3>
       <div class="divider"></div>
 
-      <div class="grid">
+      <!-- Disposition exacte demandée (2 colonnes par ligne) -->
+      <div class="row">
+        <div>
+          <label class="small" for="client">Nom du client</label>
+          <input id="client" type="text" placeholder="Ex: Mecasonic SA" />
+        </div>
+        <div>
+          <label class="small" for="adresse">Adresse</label>
+          <input id="adresse" type="text" placeholder="Rue, CP, Ville" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="small" for="dateArrivee">Date d’arrivée</label>
+          <input id="dateArrivee" type="date" />
+        </div>
+        <div>
+          <label class="small" for="dateDepart">Date de départ</label>
+          <input id="dateDepart" type="date" />
+        </div>
+      </div>
+
+      <div class="row">
         <div>
           <label class="small" for="type">Type d'intervention</label>
           <select id="type">
@@ -155,45 +171,46 @@
           </select>
         </div>
         <div>
-          <label class="small" for="dateArrivee">Date d’arrivée</label>
-          <input id="dateArrivee" type="date" />
-        </div>
-        <div>
-          <label class="small" for="dateDepart">Date de départ</label>
-          <input id="dateDepart" type="date" />
-        </div>
-
-        <div>
-          <label class="small" for="client">Nom du client</label>
-          <input id="client" type="text" placeholder="Ex: Mecasonic SA" />
-        </div>
-        <div>
-          <label class="small" for="adresse">Adresse</label>
-          <input id="adresse" type="text" placeholder="Rue, CP, Ville" />
-        </div>
-
-        <div>
           <label class="small" for="Meca">N° Meca (RMA)</label>
           <input id="Meca" type="text" />
         </div>
-        <div>
-          <label class="small" for="affaire">N° Affaire</label>
-          <input id="affaire" type="text" />
-        </div>
+      </div>
 
+      <div class="row">
         <div>
           <label class="small" for="Document">N° OC</label>
           <input id="Document" type="text" />
         </div>
         <div>
-          <label class="small" for="km">Kilomètres</label>
-          <input id="km" type="number" inputmode="decimal" placeholder="Ex: 120" />
+          <label class="small" for="cc">N° CC</label>
+          <input id="cc" type="text" />
         </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label class="small" for="affaire">N° Affaire</label>
+          <input id="affaire" type="text" />
+        </div>
+        <div></div>
       </div>
 
       <h3 class="section-title" style="margin-top:16px">Temps & déplacements</h3>
       <div class="divider"></div>
 
+      <!-- Ligne 1 -->
+      <div class="row">
+        <div>
+          <label class="small" for="kmAR">Kilomètre A/R</label>
+          <input id="kmAR" type="number" inputmode="decimal" placeholder="Ex: 120" />
+        </div>
+        <div>
+          <label class="small" for="trajetC">Temps de trajet A/R (en centième)</label>
+          <input id="trajetC" type="text" inputmode="decimal" placeholder="Ex: 1.25" />
+        </div>
+      </div>
+
+      <!-- Ligne 2 -->
       <div class="row">
         <div>
           <label class="small" for="arrivee">Heure d'arrivée</label>
@@ -205,15 +222,13 @@
         </div>
       </div>
 
+      <!-- Ligne 3 -->
       <div class="row">
         <div>
-          <label class="small" for="interventionH">Temps d'intervention (h)</label>
-          <input id="interventionH" type="text" inputmode="decimal" placeholder="Ex: 3.5" />
+          <label class="small" for="interventionC">Temps d'intervention (en centième)</label>
+          <input id="interventionC" type="text" inputmode="decimal" placeholder="Ex: 3.50" />
         </div>
-        <div>
-          <label class="small" for="trajetH">Temps de trajet A/R (h)</label>
-          <input id="trajetH" type="text" inputmode="decimal" placeholder="Ex: 1.0" />
-        </div>
+        <div></div>
       </div>
 
       <h3 class="section-title" style="margin-top:16px">Observations</h3>
@@ -276,6 +291,9 @@
     </div>
   </div>
 
+  <!-- ===================== -->
+  <!--  TEMPLATE POUR LE PNG -->
+  <!-- ===================== -->
   <div id="pdf-template">
     <div class="pdf-header">
       <div class="pdf-head-left">
@@ -284,31 +302,44 @@
       </div>
     </div>
 
+    <!-- Informations (même disposition) -->
     <div class="pdf-row">
       <div class="pdf-col box">
-        <div class="kv"><div class="k">Client</div><div id="p_client">—</div></div>
-        <div class="kv"><div class="k">Adresse</div><div id="p_adresse">—</div></div>
-        <div class="kv"><div class="k">Kilomètres</div><div id="p_km">—</div></div>
+        <div class="kv"><div class="k">Nom du client</div><div id="p_client">—</div></div>
+        <div class="kv"><div class="k">Date d’arrivée</div><div id="p_dateArrivee">—</div></div>
+        <div class="kv"><div class="k">Type d’intervention</div><div id="p_type">—</div></div>
+        <div class="kv"><div class="k">N° OC</div><div id="p_Document">—</div></div>
+        <div class="kv"><div class="k">N° Affaire</div><div id="p_affaire">—</div></div>
       </div>
       <div class="pdf-col box">
-        <div class="kv"><div class="k">Type</div><div id="p_type">—</div></div>
-        <div class="kv"><div class="k">Date d’arrivée</div><div id="p_dateArrivee">—</div></div>
+        <div class="kv"><div class="k">Adresse</div><div id="p_adresse">—</div></div>
         <div class="kv"><div class="k">Date de départ</div><div id="p_dateDepart">—</div></div>
         <div class="kv"><div class="k">N° Meca (RMA)</div><div id="p_Meca">—</div></div>
-        <div class="kv"><div class="k">N° Affaire</div><div id="p_affaire">—</div></div>
-        <div class="kv"><div class="k">N° OC</div><div id="p_Document">—</div></div>
+        <div class="kv"><div class="k">N° CC</div><div id="p_cc">—</div></div>
+      </div>
+    </div>
+
+    <!-- Temps & déplacements -->
+    <div class="pdf-row">
+      <div class="pdf-col box">
+        <div class="kv"><div class="k">Kilomètre A/R</div><div id="p_kmAR">—</div></div>
+      </div>
+      <div class="pdf-col box">
+        <div class="kv"><div class="k">Temps de trajet A/R (centième)</div><div id="p_trajetC">—</div></div>
       </div>
     </div>
 
     <div class="pdf-row">
       <div class="pdf-col box">
-        <div class="kv"><div class="k">Arrivée</div><div id="p_arrivee">—</div></div>
-        <div class="kv"><div class="k">Départ</div><div id="p_depart">—</div></div>
+        <div class="kv"><div class="k">Heure d’arrivée</div><div id="p_arrivee">—</div></div>
       </div>
       <div class="pdf-col box">
-        <div class="kv"><div class="k">Intervention (h)</div><div id="p_interventionH">—</div></div>
-        <div class="kv"><div class="k">Trajet A/R (h)</div><div id="p_trajetH">—</div></div>
+        <div class="kv"><div class="k">Heure de départ</div><div id="p_depart">—</div></div>
       </div>
+    </div>
+
+    <div class="box" style="margin:10px 0 0">
+      <div class="kv"><div class="k">Temps d’intervention (centième)</div><div id="p_interventionC">—</div></div>
     </div>
 
     <div class="box" style="margin:10px 0 0">
@@ -397,7 +428,7 @@
     starsRoot.addEventListener('pointerup', e=>{ dragging=false; starsRoot.releasePointerCapture(e.pointerId); });
     starsRoot.addEventListener('pointercancel', ()=> dragging=false);
 
-    // ★ Helper: dessin "contain + center" en pixels natifs (canvas.width/height)
+    // ★ Helper: dessin contain+center en pixels natifs
     function drawSignatureImage(canvas, dataUrl){
       return new Promise(res=>{
         const img = new Image();
@@ -406,16 +437,13 @@
           const rect = canvas.getBoundingClientRect();
           const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
-          // Dimension interne (pixels)
           canvas.width  = Math.floor(rect.width  * dpr);
           canvas.height = Math.floor(rect.height * dpr);
 
-          // Dessin en pixels natifs sans transform
           ctx.setTransform(1,0,0,1,0,0);
           ctx.imageSmoothingEnabled = false;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          // Contain + center
           const iw = img.width, ih = img.height;
           const scale = Math.min(canvas.width / iw, canvas.height / ih);
           const dw = Math.round(iw * scale);
@@ -424,15 +452,12 @@
           const dy = Math.round((canvas.height - dh) / 2);
           ctx.drawImage(img, dx, dy, dw, dh);
 
-          // Reconfigure pour reprise du dessin utilisateur en coords CSS
           ctx.setTransform(1,0,0,1,0,0);
           ctx.scale(dpr, dpr);
           ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-          ctx.strokeStyle = '#E8ECF1';
+          ctx.strokeStyle = '#E8ECF1'; // blanc
 
-          // Mémorise la dernière image importée pour re-draw après resize
           canvas.dataset.sigImport = dataUrl;
-
           res();
         };
         img.onerror = () => res();
@@ -452,11 +477,9 @@
         ctx.setTransform(1,0,0,1,0,0);
         ctx.scale(DPR, DPR);
         ctx.lineWidth = 3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-        ctx.strokeStyle = '#E8ECF1';
+        ctx.strokeStyle = '#E8ECF1'; // blanc
 
-        // ★ Si une signature importée existe, on la réapplique après le resize
         if (canvas.dataset.sigImport){
-          // On redessine en natif (async), puis re-scale pour le stylo
           drawSignatureImage(canvas, canvas.dataset.sigImport);
         }
       }
@@ -480,7 +503,6 @@
         const w = canvas.width, h = canvas.height;
         const off = document.createElement('canvas'); off.width = w; off.height = h;
         const octx = off.getContext('2d',{willReadFrequently:true});
-        // ★ pas de lissage → bords nets
         octx.imageSmoothingEnabled = false;
         octx.drawImage(canvas,0,0);
         const img = octx.getImageData(0,0,w,h), d = img.data;
@@ -491,6 +513,7 @@
       return { clear(){ ctx.clearRect(0,0,canvas.width,canvas.height); delete canvas.dataset.sigImport; }, toDataURL, toDataURLBlack };
     }
 
+    // Valeurs initiales
     $('#dateArrivee').value = todayISO(); 
     $('#dateDepart').value  = ''; 
     renderStars(0);
@@ -500,6 +523,7 @@
     $('#clearClient').onclick = ()=> sigClient.clear();
     $('#clearTech').onclick   = ()=> sigTech.clear();
 
+    // Photos
     const addPhotoBtn = $('#addPhotoBtn');
     const photosInput = $('#photosInput');
     const photosList  = $('#photosList');
@@ -558,29 +582,39 @@
       if (Number.isInteger(idx) && photosData[idx]){ photosData[idx].comment = input.value; }
     });
 
+    // Remplir le template PNG/PDF
     function fillPdfTemplate(){
       const safeVal = id => $('#'+id).value?.trim();
       const setText = (id, v) => $('#'+id).textContent = safe(v);
+
+      // Informations
       setText('p_client', safeVal('client'));
       setText('p_adresse', safeVal('adresse'));
-      setText('p_km', safeVal('km'));
-      setText('p_type', safeVal('type'));
       setText('p_dateArrivee', safeVal('dateArrivee'));
       setText('p_dateDepart',  safeVal('dateDepart'));
+      setText('p_type', safeVal('type'));
       setText('p_Meca', safeVal('Meca'));
-      setText('p_affaire', safeVal('affaire'));
       setText('p_Document', safeVal('Document'));
+      setText('p_cc', safeVal('cc'));
+      setText('p_affaire', safeVal('affaire'));
+
+      // Temps & déplacements
+      setText('p_kmAR', safeVal('kmAR'));
+      setText('p_trajetC', safeVal('trajetC'));
       setText('p_arrivee', safeVal('arrivee'));
       setText('p_depart', safeVal('depart'));
-      setText('p_interventionH', safeVal('interventionH'));
-      setText('p_trajetH', safeVal('trajetH'));
+      setText('p_interventionC', safeVal('interventionC'));
+
+      // Observations + note + étoiles
       $('#p_observations').textContent = safe($('#observations').value);
       $('#p_noteTxt').textContent = `Note : ${noteValue}/10 — ${noteCaption(noteValue)}`;
       $('#p_stars').textContent = '★'.repeat(noteValue) + '☆'.repeat(10-noteValue);
 
+      // Signatures (export en noir sur fond transparent)
       const c = sigClient.toDataURLBlack(), t = sigTech.toDataURLBlack();
       $('#p_sigClient').src = c; $('#p_sigTech').src = t;
 
+      // Photos
       const section = $('#pdf-photos-section');
       const grid = $('#p_photosGrid');
       grid.innerHTML = '';
@@ -643,6 +677,7 @@
       else { share.classList.add('hidden'); preview.classList.remove('hidden'); }
     })();
 
+    // Handoff (lien téléphone)
     function base64urlEncode(bytes){
       let bin = '';
       for (const b of bytes) bin += String.fromCharCode(b);
@@ -659,9 +694,10 @@
 
     function getLightState(){
       return {
-        v:1,
+        v:2,
         ts: Date.now(),
         fields:{
+          // Informations
           type: $('#type').value,
           dateArrivee: $('#dateArrivee').value,
           dateDepart:  $('#dateDepart').value,
@@ -670,11 +706,16 @@
           Meca: $('#Meca').value,
           affaire: $('#affaire').value,
           Document: $('#Document').value,
-          km: $('#km').value,
+          cc: $('#cc').value,
+
+          // Temps & déplacements
+          kmAR: $('#kmAR').value,
+          trajetC: $('#trajetC').value,
           arrivee: $('#arrivee').value,
           depart: $('#depart').value,
-          interventionH: $('#interventionH').value,
-          trajetH: $('#trajetH').value,
+          interventionC: $('#interventionC').value,
+
+          // Divers
           observations: $('#observations').value,
           noteValue
         }
@@ -684,6 +725,8 @@
     function applyLightState(state){
       if(!state || !state.fields) return;
       const f = state.fields;
+
+      // Informations
       $('#type').value = f.type || $('#type').value;
       $('#dateArrivee').value = f.dateArrivee || '';
       $('#dateDepart').value  = f.dateDepart  || '';
@@ -692,11 +735,17 @@
       $('#Meca').value = f.Meca || '';
       $('#affaire').value = f.affaire || '';
       $('#Document').value = f.Document || '';
-      $('#km').value = f.km || '';
+      // rétro-compatibilité: d’anciens exports utilisaient "km" pour le N° CC
+      $('#cc').value = f.cc || f.km || '';
+
+      // Temps & déplacements (nouveaux champs)
+      $('#kmAR').value = f.kmAR || '';
+      $('#trajetC').value = f.trajetC || f.trajetH || ''; // si ancien état en "heures", on le met tel quel
       $('#arrivee').value = f.arrivee || '';
       $('#depart').value = f.depart || '';
-      $('#interventionH').value = f.interventionH || '';
-      $('#trajetH').value = f.trajetH || '';
+      $('#interventionC').value = f.interventionC || f.interventionH || '';
+
+      // Divers
       $('#observations').value = f.observations || '';
       noteValue = Number(f.noteValue||0); renderStars(noteValue);
     }
@@ -744,6 +793,7 @@
       }
     })();
 
+    // QR
     function drawQR(el, text, size = 320, margin = 8, dark = '#000', light = '#fff') {
       function makeModel(tn) {
         const ECC_L = 1;
@@ -848,10 +898,12 @@
       openHandoffModal(link);
     });
 
+    // Export/Import JSON (complet)
     function getFullState(){
       return {
-        v:1, ts: Date.now(),
+        v:2, ts: Date.now(),
         fields:{
+          // Informations
           type: $('#type').value,
           dateArrivee: $('#dateArrivee').value,
           dateDepart:  $('#dateDepart').value,
@@ -860,11 +912,16 @@
           Meca: $('#Meca').value,
           affaire: $('#affaire').value,
           Document: $('#Document').value,
-          km: $('#km').value,
+          cc: $('#cc').value,
+
+          // Temps & déplacements
+          kmAR: $('#kmAR').value,
+          trajetC: $('#trajetC').value,
           arrivee: $('#arrivee').value,
           depart: $('#depart').value,
-          interventionH: $('#interventionH').value,
-          trajetH: $('#trajetH').value,
+          interventionC: $('#interventionC').value,
+
+          // Divers
           observations: $('#observations').value,
           noteValue
         },
@@ -880,8 +937,8 @@
       applyLightState(data);
       if(data.photos && Array.isArray(data.photos)){ photosData = data.photos; renderPhotosList(); }
       if(data.signatures){
-        drawSignatureImage($('#sigClient'), data.signatures.client);
-        drawSignatureImage($('#sigTech'),   data.signatures.tech);
+        if (data.signatures.client) drawSignatureImage($('#sigClient'), data.signatures.client);
+        if (data.signatures.tech)   drawSignatureImage($('#sigTech'),   data.signatures.tech);
       }
     }
 

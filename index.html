@@ -21,7 +21,7 @@
       --text:#E8ECF1; --muted:#9AA3B2;
       --field:#11151F; --line:#283147; --danger:#FF6B6B;
 
-      --logo-url: url('https://www.mecasonic.com/wp-content/uploads/2020/07/LOGO-MECA@2x.png');
+--logo-url: url('https://www.mecasonic.com/wp-content/uploads/2020/07/LOGO-MECA@2x.png');
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -79,7 +79,7 @@
       padding:10px 16px; border-radius:10px; background:linear-gradient(90deg,var(--brand-red-dark)); margin-bottom:14px
     }
     .pdf-head-left{display:flex; align-items:center; gap:12px}
-    .pdf-logo{width:210px; height:8px; background:var(--logo-url) center/contain no-repeat; filter: drop-shadow(0 1px 0 rgba(0,0,0,.25))}
+    .pdf-logo{width:210px; height:28px; background:var(--logo-url) center/contain no-repeat; filter: drop-shadow(0 1px 0 rgba(0,0,0,.25))}
     .pdf-h1{font-size:20px; font-weight:700}
     .pdf-meta{font-size:12px; opacity:.95}
     .pdf-row{display:flex; gap:16px; margin:12px 0}
@@ -108,19 +108,7 @@
     .pdf-photo{border:1px solid #e4e4e4; border-radius:8px; background:#fff; display:flex; flex-direction:column; gap:6px; padding:8px}
     .pdf-photo img{width:100%; height:auto; max-height:360px; object-fit:contain; background:#fff; display:block}
     .pdf-caption{font-size:11px; color:#222; border-top:1px dashed #e4e4e4; padding-top:6px; white-space:pre-wrap}
-    .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.5); z-index:9999}
-    .modal.open{display:grid}
-    .modal-card{background:var(--card); border:1px solid var(--line); border-radius:20px; padding:18px; width:min(96vw,560px); box-shadow:0 10px 30px rgba(0,0,0,.5)}
-    .modal-title{font-weight:700; font-size:18px; margin:0 0 6px}
-    .modal-sub{color:var(--muted); font-size:13px; margin-bottom:12px}
-    .modal-row{display:grid; grid-template-columns:1fr; gap:10px}
-    .linkbox{background:#0f1420; border:1px solid var(--line); border-radius:12px; padding:10px; word-break:break-all; font-size:13px}
-    .qr-wrap{display:flex; justify-content:center; padding:10px 0}
-    .modal-actions{display:flex; gap:10px; justify-content:flex-end; margin-top:10px}
-    .warn{font-size:12px; color:#ffb020}
     @media print{ #pdf-template{position:static; width:auto; padding:0} }
-    #handoffQR{ padding:12px; background:#fff; border-radius:10px; }
-    #handoffQR canvas{ display:block; margin:0 auto; image-rendering:pixelated; }
   </style>
 </head>
 <body>
@@ -283,9 +271,8 @@
           <button class="btn btn-ghost" type="button" id="importBtn">Importer JSON</button>
         </div>
         <div class="toolbar" style="gap:8px">
-          <button class="btn btn-ghost" type="button" id="handoffBtn">Déplacer sur téléphone</button>
           <button class="btn btn-ghost" type="button" id="previewBtn">Aperçu PDF</button>
-          <button class="btn btn-primary hidden" type="button" id="shareBtn">Partager (PNG)</button>
+          <button class="btn btn-primary" type="button" id="shareBtn">Partager (PNG)</button>
         </div>
       </div>
     </div>
@@ -377,29 +364,12 @@
     </div>
   </div>
 
-  <div id="handoffModal" class="modal" aria-hidden="true">
-    <div class="modal-card">
-      <div class="modal-title">Déplacer sur téléphone</div>
-      <div class="modal-sub">Scanne le QR avec ton téléphone ou copie le lien pour reprendre là où tu en étais.</div>
-      <div class="warn">Le lien n’inclut pas les <b>photos</b> ni les <b>signatures</b> (pour rester court). Utilise “Exporter JSON” si tu dois tout transférer.</div>
-      <div class="qr-wrap"><div id="handoffQR"></div></div>
-      <div id="handoffLink" class="linkbox"></div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" type="button" id="copyLinkBtn">Copier le lien</button>
-        <button class="btn btn-primary" type="button" id="closeHandoffBtn">Fermer</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/lz-string@1.5.0/libs/lz-string.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
-
+  <!-- plus de LZ-String, ni qrcodejs, ni modale -->
   <script>
     const $ = sel => document.querySelector(sel);
     const safe = v => (v==null || String(v).trim()==='' ? '—' : String(v).trim());
     const todayISO = () => new Date().toISOString().slice(0,10);
     const noteCaption = n => n===0?'Aucune évaluation': n<=2?'Très insuffisant': n<=4?'Peut mieux faire': n<=6?'Correct': n<=8?'Bien': n<=9?'Très bien':'Excellent';
-    const isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
     let noteValue = 0;
     const starsRoot = $('#stars');
 
@@ -671,233 +641,6 @@
       setTimeout(()=>URL.revokeObjectURL(url), 60000);
     });
 
-    (function setupButtons(){
-      const preview = $('#previewBtn'); const share = $('#shareBtn');
-      if (isIOS()) { preview.classList.add('hidden'); share.classList.remove('hidden'); }
-      else { share.classList.add('hidden'); preview.classList.remove('hidden'); }
-    })();
-
-    // Handoff (lien téléphone)
-    function base64urlEncode(bytes){
-      let bin = '';
-      for (const b of bytes) bin += String.fromCharCode(b);
-      return btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
-    }
-    function base64urlDecode(str){
-      str = str.replace(/-/g,'+').replace(/_/g,'/');
-      while (str.length % 4) str += '=';
-      const bin = atob(str);
-      const out = new Uint8Array(bin.length);
-      for (let i=0;i<bin.length;i++) out[i] = bin.charCodeAt(i);
-      return out;
-    }
-
-    function getLightState(){
-      return {
-        v:2,
-        ts: Date.now(),
-        fields:{
-          // Informations
-          type: $('#type').value,
-          dateArrivee: $('#dateArrivee').value,
-          dateDepart:  $('#dateDepart').value,
-          client: $('#client').value,
-          adresse: $('#adresse').value,
-          Meca: $('#Meca').value,
-          affaire: $('#affaire').value,
-          Document: $('#Document').value,
-          cc: $('#cc').value,
-
-          // Temps & déplacements
-          kmAR: $('#kmAR').value,
-          trajetC: $('#trajetC').value,
-          arrivee: $('#arrivee').value,
-          depart: $('#depart').value,
-          interventionC: $('#interventionC').value,
-
-          // Divers
-          observations: $('#observations').value,
-          noteValue
-        }
-      };
-    }
-
-    function applyLightState(state){
-      if(!state || !state.fields) return;
-      const f = state.fields;
-
-      // Informations
-      $('#type').value = f.type || $('#type').value;
-      $('#dateArrivee').value = f.dateArrivee || '';
-      $('#dateDepart').value  = f.dateDepart  || '';
-      $('#client').value = f.client || '';
-      $('#adresse').value = f.adresse || '';
-      $('#Meca').value = f.Meca || '';
-      $('#affaire').value = f.affaire || '';
-      $('#Document').value = f.Document || '';
-      // rétro-compatibilité: d’anciens exports utilisaient "km" pour le N° CC
-      $('#cc').value = f.cc || f.km || '';
-
-      // Temps & déplacements (nouveaux champs)
-      $('#kmAR').value = f.kmAR || '';
-      $('#trajetC').value = f.trajetC || f.trajetH || ''; // si ancien état en "heures", on le met tel quel
-      $('#arrivee').value = f.arrivee || '';
-      $('#depart').value = f.depart || '';
-      $('#interventionC').value = f.interventionC || f.interventionH || '';
-
-      // Divers
-      $('#observations').value = f.observations || '';
-      noteValue = Number(f.noteValue||0); renderStars(noteValue);
-    }
-
-    function makeHandoffURL(){
-      const json = JSON.stringify(getLightState());
-      const compressed = LZString.compressToEncodedURIComponent(json);
-      const url = new URL(window.location.href);
-      url.hash = 'handoffz=' + compressed;  
-      return url.toString();
-    }
-
-    (function resumeFromHash(){
-      const h = location.hash || '';
-
-      const mz = h.match(/handoffz=([^&]+)/);
-      if (mz) {
-        try{
-          const text = LZString.decompressFromEncodedURIComponent(mz[1]);
-          const state = JSON.parse(text);
-          applyLightState(state);
-          history.replaceState(null,'', location.pathname + location.search);
-          const toast = document.createElement('div');
-          toast.textContent = 'Formulaire repris depuis le lien 📱';
-          toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F2937;border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:9999';
-          document.body.appendChild(toast);
-          setTimeout(()=>toast.remove(), 2000);
-          return;
-        }catch(e){}
-      }
-      const m = h.match(/handoff=([A-Za-z0-9\-\_]+)/);
-      if (m) {
-        try{
-          const bytes = base64urlDecode(m[1]);
-          const text = new TextDecoder().decode(bytes);
-          const state = JSON.parse(text);
-          applyLightState(state);
-          history.replaceState(null,'', location.pathname + location.search);
-          const toast = document.createElement('div');
-          toast.textContent = 'Formulaire repris depuis le lien 📱';
-          toast.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1F2937;border:1px solid rgba(255,255,255,.15);color:#fff;padding:10px 14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);z-index:9999';
-          document.body.appendChild(toast);
-          setTimeout(()=>toast.remove(), 2000);
-        }catch(e){}
-      }
-    })();
-
-    // QR
-    function drawQR(el, text, size = 320, margin = 8, dark = '#000', light = '#fff') {
-      function makeModel(tn) {
-        const ECC_L = 1;
-        const qr = new QRCode(tn, ECC_L);
-        qr.addData(text);
-        qr.make();
-        return qr;
-      }
-      let qr;
-      for (let tn of [4, 6, 8, 10, 12, 14]) {
-        try { qr = makeModel(tn); break; } catch (e) {  }
-      }
-      if (!qr) qr = makeModel(16);
-
-      const count = qr.getModuleCount();
-      const cell = Math.floor((size - 2*margin) / count);
-      const dim = cell * count + 2*margin;
-
-      const canvas = document.createElement('canvas');
-      canvas.width = canvas.height = dim;
-      const ctx = canvas.getContext('2d');
-
-      ctx.fillStyle = light;
-      ctx.fillRect(0, 0, dim, dim);
-      ctx.fillStyle = dark;
-      for (let r = 0; r < count; r++) {
-        for (let c = 0; c < count; c++) {
-          if (qr.isDark(c, r)) {
-            ctx.fillRect(margin + c*cell, margin + r*cell, cell, cell);
-          }
-        }
-      }
-      el.innerHTML = '';
-      el.appendChild(canvas);
-    }
-
-    function openHandoffModal(link){
-      const modal   = $('#handoffModal');
-      const linkBox = $('#handoffLink');
-      const qrBox   = $('#handoffQR');
-
-      linkBox.textContent = link;
-      qrBox.innerHTML = ''; 
-      modal.classList.add('open');
-      modal.setAttribute('aria-hidden','false');
-      const DPR = Math.max(1, Math.floor(window.devicePixelRatio || 1));
-      const QUIET = 16;       
-      const MIN_CELL = 4;      
-      const MIN_SIZE = 320;      
-      const MAX_SIZE = 960;     
-      let size = link.length < 220 ? 360
-              : link.length < 380 ? 420
-              : link.length < 560 ? 520
-              : 640;
-
-      size = Math.min(MAX_SIZE, Math.max(MIN_SIZE, size));
-      function renderAt(cssSize){
-        qrBox.innerHTML = '';
-        const qr = new QRCode(qrBox, {
-          text: link,
-          width: cssSize * DPR, 
-          height: cssSize * DPR,
-          correctLevel: QRCode.CorrectLevel.L
-        });
-        const canvas = qrBox.querySelector('canvas');
-        if (canvas) {
-          canvas.style.width  = cssSize + 'px';
-          canvas.style.height = cssSize + 'px';
-        }
-        return qr;
-      }
-      let qr = renderAt(size);
-
-      try {
-        const count = qr._oQRCode.getModuleCount();      
-        const canvas = qrBox.querySelector('canvas');
-        const cellCss = (size - 2*QUIET) / count;         
-        if (cellCss < MIN_CELL && size < MAX_SIZE) {
-          const needed = Math.ceil(count * MIN_CELL + 2*QUIET);
-          size = Math.min(MAX_SIZE, needed);
-          qr = renderAt(size);
-        }
-      } catch(e) {
-        console.warn('Densité non mesurable, rendu par défaut.', e);
-      }
-
-      $('#closeHandoffBtn').onclick = ()=>{
-        modal.classList.remove('open');
-        modal.setAttribute('aria-hidden','true');
-      };
-      $('#copyLinkBtn').onclick = async ()=>{
-        try {
-          await navigator.clipboard.writeText(link);
-          $('#copyLinkBtn').textContent = 'Copié !';
-          setTimeout(()=>$('#copyLinkBtn').textContent='Copier le lien',1200);
-        } catch {}
-      };
-    }
-
-    $('#handoffBtn').addEventListener('click', ()=>{
-      const link = makeHandoffURL();
-      openHandoffModal(link);
-    });
-
     // Export/Import JSON (complet)
     function getFullState(){
       return {
@@ -931,6 +674,34 @@
           tech: sigTech.toDataURL()
         }
       };
+    }
+
+    function applyLightState(state){
+      if(!state || !state.fields) return;
+      const f = state.fields;
+
+      // Informations
+      $('#type').value = f.type || $('#type').value;
+      $('#dateArrivee').value = f.dateArrivee || '';
+      $('#dateDepart').value  = f.dateDepart  || '';
+      $('#client').value = f.client || '';
+      $('#adresse').value = f.adresse || '';
+      $('#Meca').value = f.Meca || '';
+      $('#affaire').value = f.affaire || '';
+      $('#Document').value = f.Document || '';
+      // rétro-compat : d’anciens exports utilisaient "km" pour le N° CC
+      $('#cc').value = f.cc || f.km || '';
+
+      // Temps & déplacements
+      $('#kmAR').value = f.kmAR || '';
+      $('#trajetC').value = f.trajetC || f.trajetH || '';
+      $('#arrivee').value = f.arrivee || '';
+      $('#depart').value = f.depart || '';
+      $('#interventionC').value = f.interventionC || f.interventionH || '';
+
+      // Divers
+      $('#observations').value = f.observations || '';
+      noteValue = Number(f.noteValue||0); renderStars(noteValue);
     }
 
     function applyFullState(data){
